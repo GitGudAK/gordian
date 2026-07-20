@@ -1,0 +1,26 @@
+*.iml
+.gradle
+.kotlin
+/local.properties
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+.env
+debug.keystore
+build/
+
+# Spike build artifacts (recompiled via each spike's build.sh)
+.planning/spikes/**/spike002
+.planning/spikes/**/spike003
+.planning/spikes/**/SessionFlow
+.planning/spikes/**/*-log.json
+.planning/spikes/**/debug-*

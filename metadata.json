@@ -1,0 +1,6 @@
+{
+  "name": "Gordian",
+  "description": "A 60-second rapid psychological decision-making app designed to bypass decision paralysis, featuring countdown timers, AI-powered questions, and voice-activated sentiment analysis.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
