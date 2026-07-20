@@ -1,0 +1,22 @@
+{
+  "candidates": [
+    {
+      "content": {
+        "parts": [
+          {
+            "text": "[\"Does the offer excite you more than it scares you?\", \"Would you regret never trying?\", \"Is stability your goal or your excuse?\", \"If money were equal, which job wins?\", \"Do you trust your future self to recover?\", \"Is fear of judgment driving your hesitation?\", \"Would you advise a friend to take it?\", \"Is your current job growing you?\", \"Does the startup mission matter to you?\", \"Are you staying for others or yourself?\", \"Will this chance come again soon?\", \"Deep down, have you already decided?\"]"
+          }
+        ],
+        "role": "model"
+      },
+      "finishReason": "STOP",
+      "index": 0
+    }
+  ],
+  "usageMetadata": {
+    "promptTokenCount": 180,
+    "candidatesTokenCount": 120,
+    "totalTokenCount": 300
+  },
+  "modelVersion": "gemini-3.5-flash"
+}

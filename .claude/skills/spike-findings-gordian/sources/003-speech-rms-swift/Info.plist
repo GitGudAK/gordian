@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleIdentifier</key>
+    <string>dev.gordian.spike003</string>
+    <key>CFBundleName</key>
+    <string>spike003</string>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>Spike 003 records a short clip to prove RMS metering parity with Android.</string>
+    <key>NSSpeechRecognitionUsageDescription</key>
+    <string>Spike 003 transcribes speech to prove SFSpeechRecognizer parity with Android SpeechRecognizer.</string>
+</dict>
+</plist>
