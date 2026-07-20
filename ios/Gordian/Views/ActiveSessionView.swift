@@ -69,6 +69,10 @@ struct ActiveSessionView: View {
                     .multilineTextAlignment(.center)
                     .lineSpacing(4)
                     .padding(.vertical, 12)
+                    // The question must never truncate: keep its full height and let
+                    // spacers/card padding absorb vertical compression instead
+                    .fixedSize(horizontal: false, vertical: true)
+                    .layoutPriority(1)
                     .id(viewModel.currentQuestionIndex)
                     .transition(.opacity)
                     .animation(.easeInOut(duration: 0.18), value: viewModel.currentQuestionIndex)

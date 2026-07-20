@@ -33,7 +33,14 @@ struct MainView: View {
                     .tint(.goldPrimary)
             }
         }
-        .onAppear { viewModel.modelContext = modelContext }
+        .onAppear {
+            viewModel.modelContext = modelContext
+            #if DEBUG
+            if ProcessInfo.processInfo.arguments.contains("-demoSession") {
+                viewModel.startDemoSession()
+            }
+            #endif
+        }
     }
 }
 

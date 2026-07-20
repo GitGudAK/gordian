@@ -403,6 +403,14 @@ final class SessionViewModel {
         ))
     }
 
+    #if DEBUG
+    // Launch-argument hook (-demoSession) so tooling can screenshot the session UI
+    func startDemoSession() {
+        dilemmaScenario = "Should I stay in the US or move back home to be closer to family?"
+        beginSession(with: Self.fallbackBypassQuestions)
+    }
+    #endif
+
     // MARK: - Persistence (Room repository → SwiftData)
 
     private func insert(_ log: DecisionLog) {
