@@ -1,0 +1,25 @@
+== Toolchain evidence, 2026-07-20T18:33:41Z ==
+-- xcode-select path --
+/Library/Developer/CommandLineTools
+-- xcodebuild --
+xcode-select: error: tool 'xcodebuild' requires Xcode, but active developer directory '/Library/Developer/CommandLineTools' is a command line tools instance
+-- swift --
+Apple Swift version 5.4 (swiftlang-1205.0.26.9 clang-1205.0.19.55)
+Target: x86_64-apple-darwin24.6.0
+-- macOS SDK --
+/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk
+11.3
+-- iOS Simulator SDK --
+xcrun: error: SDK "iphonesimulator" cannot be located
+xcrun: error: SDK "iphonesimulator" cannot be located
+xcrun: error: unable to lookup item 'Path' in SDK 'iphonesimulator'
+-- simctl --
+xcrun: error: unable to find utility "simctl", not a developer tool or in PATH
+-- Xcode in /Applications --
+none found
+-- SwiftUI module in CLT SDK --
+AVFoundation.framework
+Speech.framework
+SwiftUI.framework
+-- disk free --
+/dev/disk1s1s1   466Gi    17Gi    25Gi    41%    427k  264M    0%   /
