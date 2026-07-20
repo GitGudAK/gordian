@@ -7,7 +7,7 @@
 
 - Milestone: v1 — iOS app on the App Store
 - Current phase: 1 (Backend Gemini Proxy) — planning
-- iOS port: source-complete in `ios/`, uncompiled (no Xcode on this machine yet)
+- iOS port: BUILDS AND RUNS — Xcode 16.4 installed 2026-07-20 (Intel Mac → xcodes+aria2 route; App Store Xcode is Apple-Silicon-only). First build: zero errors. Running on iPhone 16 Pro simulator (iOS 18.6). Phase 2 (first build & bring-up) effectively underway.
 
 ## Decisions (locked)
 
