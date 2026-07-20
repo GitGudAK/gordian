@@ -5,9 +5,6 @@ import SwiftUI
 
 struct ActiveSessionView: View {
     var viewModel: SessionViewModel
-    var speech: SpeechCoordinator
-    @State private var textInput = ""
-    @FocusState private var fieldFocused: Bool
 
     var body: some View {
         VStack(spacing: 0) {
@@ -42,10 +39,12 @@ struct ActiveSessionView: View {
                     }
                 }
 
-                Text("Simulation: \(viewModel.selectedTopic.title)")
-                    .font(.system(size: 12, weight: .medium))
-                    .tracking(1)
+                Text("\u{201C}\(viewModel.dilemmaScenario.isEmpty ? viewModel.selectedTopic.description : viewModel.dilemmaScenario)\u{201D}")
+                    .font(.system(size: 13).italic())
                     .foregroundColor(.textMuted)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .padding(.horizontal, 8)
                 Text("RAPID ANSWERS: \(viewModel.rapidFireAnswers.count)")
                     .font(.system(size: 11, weight: .bold))
                     .tracking(1)
@@ -95,83 +94,8 @@ struct ActiveSessionView: View {
             .shadow(radius: 20)
             .padding(.vertical, 16)
 
-            // 3. Bottom interaction controls
+            // 3. Bottom interaction controls (voice moves to its own experience — see spike 005/006)
             VStack(spacing: 12) {
-                // Sentiment wave + status
-                HStack {
-                    Spacer()
-                    HStack(spacing: 4) {
-                        let baseHeights: [CGFloat] = [6, 12, 18, 24, 16, 8]
-                        ForEach(baseHeights.indices, id: \.self) { i in
-                            RoundedRectangle(cornerRadius: 2)
-                                .fill(Color.goldPrimary)
-                                .frame(
-                                    width: 3,
-                                    height: viewModel.isRecording
-                                        ? baseHeights[i] * (0.3 + CGFloat(viewModel.sentimentWaveRms) * 1.5)
-                                        : 4
-                                )
-                                .animation(.linear(duration: 0.08), value: viewModel.sentimentWaveRms)
-                        }
-                    }
-                    .frame(height: 24)
-
-                    Spacer().frame(width: 12)
-
-                    Text(viewModel.isRecording ? "RECORDING REFLECTION..." : "MICROPHONE OPTIONAL")
-                        .font(.system(size: 11, weight: .bold, design: .monospaced))
-                        .foregroundColor(.goldPrimary)
-                    Spacer()
-                }
-
-                Text(viewModel.isRecording ? viewModel.transcription : "Speak or write your raw reflection now. Press YES/NO to decide.")
-                    .font(.system(size: 12))
-                    .foregroundColor(viewModel.isRecording ? .white : .textMuted)
-                    .multilineTextAlignment(.center)
-                    .lineLimit(2)
-                    .padding(.horizontal, 12)
-
-                // Reflection input row
-                HStack(spacing: 8) {
-                    TextField(
-                        "",
-                        text: $textInput,
-                        prompt: Text("Or type rapid reflection here...")
-                            .font(.system(size: 11))
-                            .foregroundColor(.textMuted)
-                    )
-                    .focused($fieldFocused)
-                    .modifier(GordianFieldStyle(focused: fieldFocused))
-
-                    Button {
-                        if !textInput.isEmpty {
-                            viewModel.submitRapidFireAnswer(choice: "REFLECT", customText: textInput)
-                            textInput = ""
-                        }
-                    } label: {
-                        Image(systemName: "paperplane.fill")
-                            .foregroundColor(.white)
-                            .frame(width: 44, height: 44)
-                            .background(RoundedRectangle(cornerRadius: 12)
-                                .fill(textInput.isEmpty ? Color.darkSurface : Color.goldPrimary))
-                    }
-                    .disabled(textInput.isEmpty)
-
-                    Button {
-                        if viewModel.isRecording {
-                            speech.finishListening()
-                        } else {
-                            speech.startListening()
-                        }
-                    } label: {
-                        Image(systemName: viewModel.isRecording ? "mic.slash.fill" : "mic.fill")
-                            .foregroundColor(.white)
-                            .frame(width: 44, height: 44)
-                            .background(RoundedRectangle(cornerRadius: 12)
-                                .fill(viewModel.isRecording ? Color.redAccent : Color.darkSurface))
-                    }
-                }
-
                 // YES / NO
                 HStack(spacing: 16) {
                     Button {

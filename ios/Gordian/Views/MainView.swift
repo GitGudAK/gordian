@@ -140,7 +140,7 @@ struct FocusTabView: View {
             case .clarifying:
                 ClarifyingView(viewModel: viewModel, speech: speech)
             case .activeSession:
-                ActiveSessionView(viewModel: viewModel, speech: speech)
+                ActiveSessionView(viewModel: viewModel)
             case .verdict:
                 VerdictView(viewModel: viewModel)
             }
