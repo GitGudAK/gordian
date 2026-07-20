@@ -110,6 +110,7 @@ final class SessionViewModel {
 
     var sentimentLabel = "UNSURE"
     var aiReflection = "Tap YES or NO rapidly, or hold Mic to reflect your raw reaction."
+    var verdictDecision = ""
     var isLoading = false
 
     init() {
@@ -280,6 +281,7 @@ final class SessionViewModel {
         transcription = ""
         sentimentLabel = "UNSURE"
         aiReflection = "Tap YES or NO rapidly, or hold Mic to reflect your raw reaction."
+        verdictDecision = ""
         confrontedProbe = ""
         rapidFireAnswers = []
         focusScreenState = .home
@@ -317,9 +319,28 @@ final class SessionViewModel {
     // MARK: - Verdict
 
     private struct VerdictPayload: Decodable {
+        let decision: String
         let sentiment: String
         let analysis: String
         let probe: String
+    }
+
+    // Direct answer derived from the yes/no tally — used when there's no API key
+    // or the Gemini call fails. Returns (decision text, majority choice for the log).
+    private func tallyDecision() -> (String, String) {
+        let yes = rapidFireAnswers.filter { $0.choice == "YES" }.count
+        let no = rapidFireAnswers.filter { $0.choice == "NO" }.count
+        let total = rapidFireAnswers.count
+        if total == 0 {
+            return ("No gut answers logged — the knot stays tied. Run it again and answer fast.", "REFLECT")
+        }
+        if yes > no {
+            return ("Your gut says YES — \(yes) of \(total) rapid answers leaned toward action.", "YES")
+        }
+        if no > yes {
+            return ("Your gut says NO — \(no) of \(total) rapid answers pulled away.", "NO")
+        }
+        return ("Dead even (\(yes)–\(no)) — your gut is genuinely split. Sit with the probe below.", "REFLECT")
     }
 
     func evaluateFullSessionAndLog() {
@@ -337,11 +358,14 @@ final class SessionViewModel {
             .joined(separator: "\n")
 
         guard let client else {
-            let analysis = "You have survived the 60-second high-intensity pressure bypass. Your subconscious has processed the raw trade-offs. The path of least regret is calling you. Go forth with confidence."
+            let (decision, majority) = tallyDecision()
+            let analysis = "That tally is your subconscious talking — 60 seconds is too fast for rationalizing. Trust the direction it pointed."
             applyVerdict(
+                decision: decision,
+                majorityChoice: majority,
                 sentiment: "DECIDED",
                 analysis: analysis,
-                probe: "Are you ready to commit to this path with absolute certainty?",
+                probe: "What is the first concrete step, and when will you take it?",
                 logAnalysis: analysis
             )
             return
@@ -357,57 +381,79 @@ final class SessionViewModel {
                 + "Dialogue where we clarified their dilemma:\n\(clarText)\n"
                 + "During a high-pressure 60-second rapid-fire session, they gave the following reactions:\n\(rfText)\n\n"
                 + "Analyze their answers deeply. Look for inconsistencies, emotional triggers, subconscious patterns, and where their gut stance truly lies versus their rationalizations. "
-                + "Synthesize this into a final definitive diagnostic breakthrough (The Gordian Verdict). "
-                + "Your response MUST be in JSON format with exactly three string fields:\n"
-                + "1. \"sentiment\": A single short status or affective state representing their emotional stance (e.g., 'CONFRONTED', 'RESOLVED', 'EMERGENT CLARITY', 'DIVIDED GUTS').\n"
-                + "2. \"analysis\": A powerful, deep, compassionate 3-4 sentence psychological breakdown showing them what their gut actually wants and how to untie the knot.\n"
-                + "3. \"probe\": A final provoking, empowering query or action step for them to move forward.\n"
+                + "Synthesize this into a final definitive verdict (The Gordian Verdict). "
+                + "Your response MUST be in JSON format with exactly four string fields:\n"
+                + "1. \"decision\": THE answer. One direct, decisive sentence answering the user's dilemma in their own terms (max 15 words). No hedging, no mysticism. Example: 'Take the startup job.' or 'Stay in the US for now.'\n"
+                + "2. \"sentiment\": A single short affective state (e.g., 'RESOLVED', 'EMERGENT CLARITY', 'DIVIDED GUTS').\n"
+                + "3. \"analysis\": 2-3 plain, concrete sentences explaining WHY that is their answer, referencing their actual rapid-fire responses. Everyday language — no jargon, no 'cognitive alignment' talk.\n"
+                + "4. \"probe\": One practical follow-up question that pushes them toward the first concrete step.\n"
                 + "Output ONLY the JSON object. Do not include markdown or formatting."
             do {
                 let verdict = try await client.generateObject(
                     VerdictPayload.self,
-                    fields: ["sentiment", "analysis", "probe"],
+                    fields: ["decision", "sentiment", "analysis", "probe"],
                     system: system,
                     user: "Synthesize a final Gordian Verdict and return JSON.",
                     temperature: 0.8
                 )
+                let (_, majority) = tallyDecision()
                 applyVerdict(
+                    decision: verdict.decision,
+                    majorityChoice: majority,
                     sentiment: verdict.sentiment.uppercased(),
                     analysis: verdict.analysis,
                     probe: verdict.probe,
                     logAnalysis: "\(verdict.analysis)\n\n**CONFRONTED PROBE:** \(verdict.probe)"
                 )
             } catch {
-                let analysis = "The 60s pressure session has concluded. Your subconscious has spoken through the rapid answers. Move forward without looking back."
+                let (decision, majority) = tallyDecision()
+                let analysis = "The AI verdict was unavailable, so this is the raw tally of your answers. 60 seconds is too fast for rationalizing — trust the direction it pointed."
                 applyVerdict(
+                    decision: decision,
+                    majorityChoice: majority,
                     sentiment: "DECIDED",
                     analysis: analysis,
-                    probe: "Are you ready to commit to this path with absolute certainty?",
+                    probe: "What is the first concrete step, and when will you take it?",
                     logAnalysis: analysis
                 )
             }
         }
     }
 
-    private func applyVerdict(sentiment: String, analysis: String, probe: String, logAnalysis: String) {
+    private func applyVerdict(decision: String, majorityChoice: String, sentiment: String, analysis: String, probe: String, logAnalysis: String) {
+        verdictDecision = decision
         sentimentLabel = sentiment
         aiReflection = analysis
         confrontedProbe = probe
         insert(DecisionLog(
             simulationTitle: selectedTopic.title,
-            question: "Gordian Knot Untied",
-            choice: "CALM / FREE",
+            question: dilemmaScenario.isEmpty ? "Gordian Knot Untied" : dilemmaScenario,
+            choice: majorityChoice,
             sentiment: sentiment,
             reflection: "Completed 60s session with \(rapidFireAnswers.count) responses.",
-            aiAnalysis: logAnalysis
+            aiAnalysis: "DECISION: \(decision)\n\n\(logAnalysis)"
         ))
     }
 
     #if DEBUG
-    // Launch-argument hook (-demoSession) so tooling can screenshot the session UI
+    // Launch-argument hooks (-demoSession / -demoVerdict) so tooling can screenshot flows
     func startDemoSession() {
         dilemmaScenario = "Should I stay in the US or move back home to be closer to family?"
         beginSession(with: Self.fallbackBypassQuestions)
+    }
+
+    func startDemoVerdict() {
+        dilemmaScenario = "Should I stay in the US or move back home to be closer to family?"
+        let title = String(dilemmaScenario.prefix(25)) + "..."
+        selectedTopic = SimulationTopic(title: title, description: dilemmaScenario, defaultQuestions: Self.fallbackBypassQuestions)
+        rapidFireAnswers = [
+            RapidFireAnswer(question: "Are you choosing out of ambition or fear?", choice: "YES", reflectionText: "mostly fear of missing family moments"),
+            RapidFireAnswer(question: "Would your 80-year-old self regret choosing stagnation?", choice: "YES", reflectionText: ""),
+            RapidFireAnswer(question: "Is comfort more important to you than growth?", choice: "NO", reflectionText: ""),
+            RapidFireAnswer(question: "If no one was looking, what would your answer be?", choice: "YES", reflectionText: ""),
+            RapidFireAnswer(question: "Will you be thinking about this same problem next year?", choice: "YES", reflectionText: "")
+        ]
+        evaluateFullSessionAndLog()
     }
     #endif
 

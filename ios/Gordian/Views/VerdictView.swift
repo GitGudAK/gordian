@@ -42,11 +42,23 @@ struct VerdictView: View {
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 40)
                     } else {
-                        Text("CONGRATULATIONS. YOU HAVE CROSSED THE HURDLE.")
-                            .font(.system(size: 12, weight: .bold))
-                            .tracking(0.5)
+                        // Lead with the answer: their dilemma, then the decision, plainly
+                        if !viewModel.dilemmaScenario.isEmpty {
+                            VStack(spacing: 4) {
+                                SectionLabel(text: "YOUR DILEMMA", color: .textMuted, size: 10, tracking: 1)
+                                Text("\u{201C}\(viewModel.dilemmaScenario)\u{201D}")
+                                    .font(.system(size: 13).italic())
+                                    .foregroundColor(.textMuted)
+                                    .multilineTextAlignment(.center)
+                                    .lineLimit(3)
+                            }
+                        }
+
+                        Text(viewModel.verdictDecision)
+                            .font(.system(size: 22, weight: .heavy))
                             .foregroundColor(.goldPrimary)
                             .multilineTextAlignment(.center)
+                            .fixedSize(horizontal: false, vertical: true)
 
                         // Diagnostic pills
                         HStack(spacing: 10) {
