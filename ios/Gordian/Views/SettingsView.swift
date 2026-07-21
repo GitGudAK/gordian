@@ -136,8 +136,8 @@ struct SettingsView: View {
                     .padding(24)
                 }
             }
-            .offerCodeRedemption(isPresented: $showRedeemSheet) { _ in
-                Task { await EntitlementManager.shared.refreshEntitlements() }
+            .sheet(isPresented: $showRedeemSheet) {
+                RedeemCodeView()
             }
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)

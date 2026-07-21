@@ -64,8 +64,8 @@ struct PaywallView: View {
             }
             .padding(.horizontal, 24)
         }
-        .offerCodeRedemption(isPresented: $showRedeemSheet) { _ in
-            Task { await entitlements.refreshEntitlements() }
+        .sheet(isPresented: $showRedeemSheet) {
+            RedeemCodeView()
         }
     }
 

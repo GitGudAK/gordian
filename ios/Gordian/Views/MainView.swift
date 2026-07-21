@@ -6,6 +6,7 @@ import SwiftData
 struct MainView: View {
     @State private var viewModel = SessionViewModel()
     @State private var showSettings = false
+    @State private var showRedeemDemo = false
     @Environment(\.modelContext) private var modelContext
 
     var body: some View {
@@ -41,6 +42,9 @@ struct MainView: View {
                     .tint(.goldPrimary)
             }
         }
+        .sheet(isPresented: $showRedeemDemo) {
+            RedeemCodeView()
+        }
         .sheet(isPresented: $showSettings) {
             SettingsView(viewModel: viewModel)
                 .preferredColorScheme(.dark)
@@ -65,6 +69,8 @@ struct MainView: View {
                 viewModel.startDemoVerdict()
             } else if ProcessInfo.processInfo.arguments.contains("-demoSensitive") {
                 viewModel.startDemoSensitive()
+            } else if ProcessInfo.processInfo.arguments.contains("-demoRedeem") {
+                showRedeemDemo = true
             } else if ProcessInfo.processInfo.arguments.contains("-tabLogs") {
                 viewModel.activeTab = .insights
             } else if ProcessInfo.processInfo.arguments.contains("-tabGuides") {
