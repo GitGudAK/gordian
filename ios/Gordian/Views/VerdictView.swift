@@ -83,7 +83,7 @@ struct VerdictView: View {
                 .padding(24)
                 .gordianCard(borderColor: Color.goldPrimary.opacity(0.35), borderWidth: 1.5)
 
-                Text("Reflects your own answers — not advice.")
+                Text("Reflects your own answers, not advice.")
                     .font(.system(size: 10))
                     .foregroundColor(.textMuted.opacity(0.8))
                     .frame(maxWidth: .infinity)

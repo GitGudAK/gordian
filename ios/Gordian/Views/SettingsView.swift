@@ -83,7 +83,7 @@ struct SettingsView: View {
                         // About / legal
                         VStack(alignment: .leading, spacing: 12) {
                             SectionLabel(text: "ABOUT GORDIAN", tracking: 1)
-                            Text("Gordian is a self-reflection exercise that helps you reach your own decision faster. It does not provide advice of any kind — medical, legal, financial, psychological, or professional — and its output reflects your own answers, not a recommendation. For decisions with serious consequences, consult a qualified professional. You are always responsible for your choices.")
+                            Text("Gordian is a self-reflection exercise that helps you reach your own decision faster. It does not provide medical, legal, financial, psychological, or professional advice. Its output reflects your own answers and is not a recommendation. For decisions with serious consequences, consult a qualified professional. You are always responsible for your choices.")
                                 .font(.footnote)
                                 .foregroundColor(.textMuted)
                                 .fixedSize(horizontal: false, vertical: true)

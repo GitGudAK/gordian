@@ -185,7 +185,9 @@ final class SessionViewModel {
     // MARK: - Safety lockout (dangerous dilemmas → 5-minute pause)
 
     private static let lockoutKey = "gordian_lockout_until"
-    static let lockoutDuration: TimeInterval = 5 * 60
+    private static let lockoutStrikesKey = "gordian_lockout_strikes"
+    // Escalation: 5 minutes, then 30 minutes, then a full day per attempt.
+    static let lockoutDurations: [TimeInterval] = [5 * 60, 30 * 60, 24 * 60 * 60]
 
     var lockoutUntil: Date? {
         let t = UserDefaults.standard.double(forKey: Self.lockoutKey)
@@ -197,8 +199,16 @@ final class SessionViewModel {
         return until > Date()
     }
 
+    /// How many times the safety gate has fired on this install.
+    var lockoutStrikes: Int {
+        UserDefaults.standard.integer(forKey: Self.lockoutStrikesKey)
+    }
+
     func triggerLockout() {
-        UserDefaults.standard.set(Date().addingTimeInterval(Self.lockoutDuration).timeIntervalSince1970,
+        let strikes = lockoutStrikes
+        let duration = Self.lockoutDurations[min(strikes, Self.lockoutDurations.count - 1)]
+        UserDefaults.standard.set(strikes + 1, forKey: Self.lockoutStrikesKey)
+        UserDefaults.standard.set(Date().addingTimeInterval(duration).timeIntervalSince1970,
                                   forKey: Self.lockoutKey)
         focusScreenState = .lockedOut
     }
@@ -404,7 +414,7 @@ final class SessionViewModel {
         case .binary:
             decision = "Your gut picked \(winner.uppercased())."
         }
-        let why = "You answered \(winner.uppercased()) to \(winnerCount) of the \(total) questions. Quick answers leave no time to build justifications — this pattern reflects your immediate preference."
+        let why = "You answered \(winner.uppercased()) to \(winnerCount) of the \(total) questions. Quick answers leave no time to build justifications, so this pattern reflects your immediate preference."
         let nextStep = "Pick one small step toward it and do it today.\(checkIn)"
         return (decision, winner == right && answerMode == .yesNo ? "YES" : (answerMode == .yesNo ? "NO" : winner), why, nextStep)
     }
