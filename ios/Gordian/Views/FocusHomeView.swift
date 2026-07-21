@@ -10,28 +10,20 @@ struct FocusHomeView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 20) {
-                // Hero logo & title
-                VStack(spacing: 8) {
-                    // The mark sits directly on the background: no tile, no
-                    // border, no box (asset keyed to transparency, ticket #12)
+            VStack(spacing: 22) {
+                // Compact hero (~30%): the brand moment, then out of the way
+                VStack(spacing: 10) {
                     Image("KnotLogo")
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 104, height: 104)
+                        .frame(width: 84, height: 84)
                     Text("GORDIAN")
-                        .font(.system(size: 32, weight: .heavy))
-                        .tracking(4)
+                        .font(.system(size: 24, weight: .heavy))
+                        .tracking(5)
                         .foregroundColor(.goldPrimary)
-                    Text("BYPASS COGNITIVE OVERLOAD")
-                        .font(.system(size: 11, weight: .bold))
-                        .tracking(2)
-                        .foregroundColor(.textLight)
-                    Text("A sixty-second self-reflection exercise that helps you reach your own decision faster.")
-                        .font(.footnote)
+                    Text("Sixty seconds to your own answer.")
+                        .font(.system(size: 13))
                         .foregroundColor(.textMuted)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 16)
 
                     if EntitlementManager.shared.isInTrial {
                         Text("FREE WEEK · \(EntitlementManager.shared.trialDaysRemaining) \(EntitlementManager.shared.trialDaysRemaining == 1 ? "DAY" : "DAYS") LEFT")
@@ -40,89 +32,102 @@ struct FocusHomeView: View {
                             .foregroundColor(.goldPrimary)
                             .padding(.horizontal, 12)
                             .padding(.vertical, 6)
-                            .background(Capsule().stroke(Color.goldPrimary.opacity(0.4), lineWidth: 1))
-                            .padding(.top, 2)
+                            .background(Capsule().stroke(Color.goldPrimary.opacity(0.35), lineWidth: 1))
+                            .padding(.top, 4)
                     }
                 }
-                .padding(.vertical, 12)
+                .padding(.top, 6)
 
-                // Scenario entry card
-                VStack(alignment: .leading, spacing: 16) {
-                    SectionLabel(text: "YOUR DILEMMA")
+                // Dilemma surface — soft, borderless, ambient (no boxes in boxes)
+                VStack(alignment: .leading, spacing: 6) {
+                    ZStack(alignment: .bottomTrailing) {
+                        TextField(
+                            "",
+                            text: $textInput,
+                            prompt: Text("What are you wrestling with?")
+                                .font(.system(size: 16))
+                                .foregroundColor(.textMuted.opacity(0.7)),
+                            axis: .vertical
+                        )
+                        .font(.system(size: 17))
+                        .lineSpacing(5)
+                        .lineLimit(11...16)
+                        .focused($fieldFocused)
+                        .submitLabel(.go)
+                        .onSubmit(startSetup)
+                        .padding(20)
+                        .padding(.bottom, 34)
 
-                    TextField(
-                        "",
-                        text: $textInput,
-                        prompt: Text("What are you wrestling with? e.g. 'Take the new job or stay?'")
-                            .font(.system(size: 13))
-                            .foregroundColor(.textMuted),
-                        axis: .vertical
+                        Button {
+                            if viewModel.isRecording {
+                                speech.finishListening()
+                            } else {
+                                speech.startListening()
+                            }
+                        } label: {
+                            Image(systemName: viewModel.isRecording ? "mic.slash.fill" : "mic.fill")
+                                .font(.system(size: 15))
+                                .foregroundColor(viewModel.isRecording ? .redAccent : .goldPrimary.opacity(0.85))
+                                .frame(width: 42, height: 42)
+                                .background(Circle().fill(Color.white.opacity(viewModel.isRecording ? 0.02 : 0.04)))
+                        }
+                        .accessibilityLabel(viewModel.isRecording ? "Stop speaking" : "Speak your dilemma")
+                        .padding(12)
+                    }
+                    .background(
+                        RoundedRectangle(cornerRadius: 28)
+                            .fill(
+                                LinearGradient(
+                                    colors: [Color.white.opacity(0.055), Color.white.opacity(0.025)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
                     )
-                    .lineLimit(5...8)
-                    .focused($fieldFocused)
-                    .submitLabel(.go)
-                    .onSubmit(startSetup)
-                    .modifier(GordianFieldStyle(focused: fieldFocused))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 28)
+                            .stroke(Color.goldPrimary.opacity(fieldFocused ? 0.22 : 0.0), lineWidth: 1)
+                            .animation(.easeInOut(duration: 0.25), value: fieldFocused)
+                    )
 
                     if viewModel.isRecording {
                         Text("Listening to your gut...")
                             .font(.system(size: 12).italic())
                             .foregroundColor(.goldPrimary)
                             .frame(maxWidth: .infinity)
-                            .frame(height: 40)
-                            .background(RoundedRectangle(cornerRadius: 8).fill(Color.goldPrimary.opacity(0.05)))
-                    }
-
-                    // Voice trigger
-                    Button {
-                        if viewModel.isRecording {
-                            speech.finishListening()
-                        } else {
-                            speech.startListening()
-                        }
-                    } label: {
-                        HStack(spacing: 8) {
-                            Image(systemName: viewModel.isRecording ? "mic.slash.fill" : "mic.fill")
-                                .accessibilityHidden(true)
-                                .font(.system(size: 15))
-                                .foregroundColor(viewModel.isRecording ? .redAccent : .goldPrimary)
-                            Text(viewModel.isRecording ? "STOP SPEAKING" : "SPEAK IT INSTEAD")
-                                .font(.system(size: 11, weight: .bold))
-                                .foregroundColor(.white)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 48)
-                        .background(RoundedRectangle(cornerRadius: 12)
-                            .fill(viewModel.isRecording ? Color.redAccent.opacity(0.2) : Color.darkSurfaceVariant))
-                        .overlay(RoundedRectangle(cornerRadius: 12)
-                            .stroke(viewModel.isRecording ? Color.redAccent : Color.white.opacity(0.05), lineWidth: 1))
+                            .padding(.top, 6)
                     }
                 }
-                .padding(20)
-                .gordianCard(cornerRadius: 20)
 
-                // CTA
+                // CTA — one warm capsule, glowing only when there's something to untie
                 Button(action: startSetup) {
-                    HStack(spacing: 10) {
-                        Image(systemName: "key.fill")
-                            .font(.system(size: 16))
-                        Text("UNTIE MY KNOT")
-                            .font(.system(size: 15, weight: .heavy))
-                            .tracking(1)
-                    }
-                    .foregroundColor(textInput.isEmpty ? .textMuted : .black)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 56)
-                    .background(RoundedRectangle(cornerRadius: 24)
-                        .fill(textInput.isEmpty ? Color.darkSurfaceVariant : Color.goldPrimary))
+                    Text("Untie my knot")
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundColor(textInput.isEmpty ? .textMuted.opacity(0.7) : .black)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 58)
+                        .background(
+                            Capsule().fill(
+                                textInput.isEmpty
+                                    ? AnyShapeStyle(Color.white.opacity(0.04))
+                                    : AnyShapeStyle(LinearGradient(
+                                        colors: [.goldAccent, .goldPrimary],
+                                        startPoint: .top,
+                                        endPoint: .bottom))
+                            )
+                        )
+                        .shadow(color: Color.goldPrimary.opacity(textInput.isEmpty ? 0 : 0.35),
+                                radius: 22, y: 6)
+                        .animation(.easeInOut(duration: 0.3), value: textInput.isEmpty)
                 }
                 .disabled(textInput.isEmpty)
             }
             .padding(.horizontal, 24)
-            .padding(.top, 16)
+            .padding(.top, 12)
             .padding(.bottom, 24)
         }
         .scrollDismissesKeyboard(.interactively)
+        .scrollBounceBehavior(.basedOnSize)
         .onReceive(NotificationCenter.default.publisher(for: .speechDilemmaResult)) { note in
             if let result = note.object as? String {
                 textInput = result

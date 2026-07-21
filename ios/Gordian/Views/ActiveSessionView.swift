@@ -109,7 +109,7 @@ struct ActiveSessionView: View {
                 } label: {
                     Text("End Session")
                         .font(.system(size: 13, weight: .medium))
-                        .foregroundColor(.redAccent.opacity(0.8))
+                        .foregroundColor(.textMuted)
                         .frame(maxWidth: .infinity)
                         .frame(height: 44)
                 }

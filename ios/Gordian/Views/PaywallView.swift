@@ -64,6 +64,7 @@ struct PaywallView: View {
             }
             .padding(.horizontal, 24)
         }
+        .scrollBounceBehavior(.basedOnSize)
         .sheet(isPresented: $showRedeemSheet) {
             RedeemCodeView()
         }

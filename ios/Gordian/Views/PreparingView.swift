@@ -30,7 +30,42 @@ struct PreparingView: View {
                     .padding(.horizontal, 24)
             }
 
-            if viewModel.preparingFailed {
+            if viewModel.notADecision {
+                VStack(spacing: 16) {
+                    Image(systemName: "questionmark.circle")
+                        .font(.system(size: 24))
+                        .foregroundColor(.goldPrimary)
+                    Text("That's not a knot yet. Describe a decision you're facing, with a choice you could act on.")
+                        .font(.system(size: 13))
+                        .foregroundColor(.textLight)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                    if !viewModel.suggestedReframe.isEmpty {
+                        Button {
+                            viewModel.startDilemmaSetup(scenario: viewModel.suggestedReframe)
+                        } label: {
+                            Text("Try: \u{201C}\(viewModel.suggestedReframe)\u{201D}")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundColor(.black)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal, 18)
+                                .padding(.vertical, 12)
+                                .background(Capsule().fill(Color.goldPrimary))
+                        }
+                    }
+                    Button {
+                        viewModel.cancelPreparing()
+                        NotificationCenter.default.post(name: .focusDilemmaField, object: nil)
+                    } label: {
+                        Text("Rephrase")
+                            .font(.system(size: 13))
+                            .foregroundColor(.textMuted)
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .padding(24)
+                .gordianCard(borderColor: Color.goldPrimary.opacity(0.2))
+            } else if viewModel.preparingFailed {
                 VStack(spacing: 16) {
                     Image(systemName: "wifi.slash")
                         .font(.system(size: 22))

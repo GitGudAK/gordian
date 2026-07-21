@@ -136,6 +136,7 @@ struct SettingsView: View {
                     .padding(24)
                 }
             }
+            .scrollBounceBehavior(.basedOnSize)
             .sheet(isPresented: $showRedeemSheet) {
                 RedeemCodeView()
             }

@@ -8,7 +8,6 @@ import { env, createExecutionContext, waitOnExecutionContext, runInDurableObject
 import worker from "../src/index";
 import { installFetchMock, clearFetchMocks, mockPersist, GEMINI_ORIGIN } from "./helpers/fetch-mock";
 import { isoWeekKey } from "../src/do/deviceMeter";
-import questionsFixture from "./fixtures/response-questions.json";
 import verdictFixture from "./fixtures/response-verdict.json";
 
 // The worker handler is dispatched directly (same context as the tests, so the
@@ -31,6 +30,28 @@ function mockUpstream(fixture: unknown) {
   clearFetchMocks();
   mockPersist(GEMINI_ORIGIN, () => Response.json(fixture));
 }
+
+// A generateContent body whose payload satisfies BOTH the gate call (mode/options)
+// and the questions call (questions array) — persisted mocks serve every hop.
+const fullSessionBody = {
+  candidates: [
+    {
+      content: {
+        parts: [
+          {
+            text: JSON.stringify({
+              mode: "BINARY",
+              optionA: "Berlin",
+              optionB: "Austin",
+              questions: Array.from({ length: 12 }, (_, i) => `Question ${i + 1}?`),
+            }),
+          },
+        ],
+      },
+      finishReason: "STOP",
+    },
+  ],
+};
 
 async function post(path: string, deviceId: string | null, body: unknown): Promise<Response> {
   const headers: Record<string, string> = { "content-type": "application/json" };
@@ -70,7 +91,7 @@ describe("isoWeekKey", () => {
 
 describe("sliding-window rate limit", () => {
   it("returns 429 rate_limited once the window is full, while another device still succeeds", async () => {
-    mockUpstream(questionsFixture);
+    mockUpstream(fullSessionBody);
 
     // Fill device A's window to RATE_LIMIT_CALLS (6).
     const stub = env.DEVICE_METER.get(env.DEVICE_METER.idFromName(DEVICE_A));
@@ -104,7 +125,7 @@ describe("sliding-window rate limit", () => {
 
 describe("weekly session counter", () => {
   it("increments only on session-plan calls and is readable via X-Weekly-Sessions", async () => {
-    mockUpstream(questionsFixture);
+    mockUpstream(fullSessionBody);
     const first = await post("/v1/session-plan", DEVICE_D, sessionBody);
     expect(first.status).toBe(200);
     expect(first.headers.get("X-Weekly-Sessions")).toBe("1");

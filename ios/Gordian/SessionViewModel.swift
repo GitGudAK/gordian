@@ -175,6 +175,10 @@ final class SessionViewModel {
     /// Component sub-decisions returned when a dilemma classifies TOO_BIG.
     var suggestedKnots: [String] = []
 
+    /// Input wasn't a decision (NOT_A_DECISION); optional server-suggested rephrase.
+    var notADecision = false
+    var suggestedReframe = ""
+
     func retryPreparing() {
         preparingFailed = false
         generateBypassQuestionsAndStart()
@@ -182,6 +186,8 @@ final class SessionViewModel {
 
     func cancelPreparing() {
         preparingFailed = false
+        notADecision = false
+        suggestedReframe = ""
         focusScreenState = .home
     }
 
@@ -250,6 +256,8 @@ final class SessionViewModel {
         rapidFireAnswers = []
         confrontedProbe = ""
         preparingFailed = false
+        notADecision = false
+        suggestedReframe = ""
         focusScreenState = .preparing
         generateBypassQuestionsAndStart()
     }
@@ -290,6 +298,12 @@ final class SessionViewModel {
                 let plan = try await proxy.sessionPlan(scenario: scenario)
                 if plan.mode.uppercased() == "SENSITIVE" {
                     triggerLockout()
+                    return
+                }
+                if plan.mode.uppercased() == "NOT_A_DECISION" {
+                    // Not a dilemma — bounce with the server's rephrase if it offered one
+                    suggestedReframe = plan.optionA
+                    notADecision = true
                     return
                 }
                 if plan.mode.uppercased() == "TOO_BIG" {
@@ -512,6 +526,11 @@ final class SessionViewModel {
         if let (a, b) = parseBinaryOptions(from: dilemmaScenario) {
             beginSession(with: Self.fallbackBinaryQuestions, mode: .binary(a, b))
         }
+    }
+
+    // Exercises the NOT_A_DECISION bounce via the real proxy round-trip
+    func startDemoNonQuestion() {
+        startDilemmaSetup(scenario: "I got the promotion")
     }
 
     // Exercises the TOO_BIG decomposition via the real proxy round-trip

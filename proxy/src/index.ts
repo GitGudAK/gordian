@@ -36,6 +36,8 @@ interface RequestMeta {
   outcome: string;
 }
 
+class SpendCapError extends Error {}
+
 function errorResponse(code: ErrorCode, message: string, meta: RequestMeta): Response {
   meta.outcome = code;
   return Response.json({ error: { code, message } }, { status: ERROR_STATUS[code] });
@@ -109,34 +111,85 @@ async function handleOperation(
   // widened: generated Env types vars as literals, but they're operator-tunable
   const modelVar = (op === "session-plan" ? env.MODEL_SESSION_PLAN : env.MODEL_VERDICT) as string | undefined;
   const fallbackVar = (op === "session-plan" ? env.MODEL_SESSION_PLAN_FALLBACK : env.MODEL_VERDICT_FALLBACK) as string | undefined;
-  const config = parseModelVar(modelVar ?? "gemini:gemini-3.5-flash");
-  meta.provider = config.provider;
-  meta.model = config.model;
+
+  // Primary + fallback-model chain (AI-always), spend-counted per upstream attempt.
+  const callChain = async (req: StructuredRequest): Promise<unknown> => {
+    const config = parseModelVar(modelVar ?? "gemini:gemini-3.5-flash");
+    meta.provider = config.provider;
+    meta.model = config.model;
+    try {
+      return JSON.parse(await adapterFor(config)(req, config.model, env));
+    } catch (err) {
+      const fallback = fallbackVar && fallbackVar !== modelVar ? parseModelVar(fallbackVar) : null;
+      if (!fallback) throw err;
+      const retrySpend = await spendStub.checkAndIncrement();
+      if (!retrySpend.allowed) throw new SpendCapError();
+      meta.provider = fallback.provider;
+      meta.model = fallback.model;
+      return JSON.parse(await adapterFor(fallback)(req, fallback.model, env));
+    }
+  };
 
   let payload: unknown;
   try {
-    const text = await adapterFor(config)(structured, config.model, env);
-    payload = JSON.parse(text);
-  } catch (err) {
-    // AI-always: one retry on the fallback model before failing to the client.
-    const fallback = fallbackVar && fallbackVar !== modelVar ? parseModelVar(fallbackVar) : null;
-    if (!fallback) {
-      const message = err instanceof UpstreamError ? err.message : "upstream call failed";
-      return errorResponse("upstream_error", message, meta);
+    if (op === "session-plan") {
+      // Two-tier: cheap gate classifies; the premium model only ever writes questions.
+      const gateVar = (env.MODEL_GATE as string | undefined);
+      let gate: Record<string, unknown> | null = null;
+      if (gateVar) {
+        try {
+          const gateConfig = parseModelVar(gateVar);
+          const gateText = await adapterFor(gateConfig)(
+            {
+              system: ops.gateSystem((body as { scenario: string }).scenario ?? ""),
+              user: ops.GATE_USER,
+              geminiSchema: ops.SESSION_PLAN_GEMINI_SCHEMA,
+              anthropicSchema: ops.SESSION_PLAN_ANTHROPIC_SCHEMA,
+              temperature: 0.2,
+            },
+            gateConfig.model,
+            env,
+          );
+          const parsed = JSON.parse(gateText) as Record<string, unknown>;
+          if (typeof parsed["mode"] === "string") gate = parsed;
+        } catch {
+          gate = null; // gate model unavailable → legacy single-call below
+        }
+      }
+
+      if (gate) {
+        const mode = String(gate["mode"]).toUpperCase();
+        if (mode === "SENSITIVE" || mode === "TOO_BIG" || mode === "NOT_A_DECISION") {
+          payload = gate; // terminal classification: no premium call, fast return
+        } else {
+          const spend2 = await spendStub.checkAndIncrement();
+          if (!spend2.allowed) throw new SpendCapError();
+          const q = (await callChain({
+            system: ops.questionsSystem(
+              (body as { scenario: string }).scenario ?? "",
+              mode,
+              String(gate["optionA"] ?? ""),
+              String(gate["optionB"] ?? ""),
+            ),
+            user: ops.QUESTIONS_USER,
+            geminiSchema: ops.QUESTIONS_GEMINI_SCHEMA,
+            anthropicSchema: ops.QUESTIONS_ANTHROPIC_SCHEMA,
+            temperature: ops.TEMPERATURE,
+          })) as Record<string, unknown>;
+          payload = { ...gate, questions: q["questions"] ?? [] };
+        }
+      } else {
+        payload = await callChain(structured);
+      }
+    } else {
+      payload = await callChain(structured);
     }
-    const retrySpend = await spendStub.checkAndIncrement();
-    if (!retrySpend.allowed) {
+  } catch (err) {
+    if (err instanceof SpendCapError) {
       return errorResponse("spend_cap", "global daily capacity reached — try again tomorrow", meta);
     }
-    meta.provider = fallback.provider;
-    meta.model = fallback.model;
-    try {
-      const text = await adapterFor(fallback)(structured, fallback.model, env);
-      payload = JSON.parse(text);
-    } catch (retryErr) {
-      const message = retryErr instanceof UpstreamError ? retryErr.message : "upstream call failed";
-      return errorResponse("upstream_error", message, meta);
-    }
+    const message = err instanceof UpstreamError ? err.message : "upstream call failed";
+    return errorResponse("upstream_error", message, meta);
   }
 
   meta.outcome = "ok";

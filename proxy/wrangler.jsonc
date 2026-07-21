@@ -8,6 +8,9 @@
   },
   // All limits and model choices are tunable per deploy — no code change, no app release.
   "vars": {
+    // Cheap classifier for the gate step (safety/reality/scope/mode);
+    // falls back to a single premium call if this model errors
+    "MODEL_GATE": "gemini:gemini-flash-lite-latest",
     "MODEL_SESSION_PLAN": "gemini:gemini-3.5-flash",
     "MODEL_VERDICT": "gemini:gemini-3.5-flash",
     // AI-always policy: if the primary model fails, retry once on the fallback

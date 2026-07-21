@@ -76,5 +76,6 @@ struct TooBigView: View {
             }
             .padding(.horizontal, 24)
         }
+        .scrollBounceBehavior(.basedOnSize)
     }
 }

@@ -141,5 +141,6 @@ struct CalibrateView: View {
             }
         }
         .padding(.vertical, 12)
+        .scrollBounceBehavior(.basedOnSize)
     }
 }

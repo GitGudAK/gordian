@@ -170,6 +170,12 @@ describe("prompt port (verbatim sentinels)", () => {
     expect(system).toContain("mode='SENSITIVE'");
   });
 
+  it("session-plan prompt includes the NOT_A_DECISION reality check", () => {
+    const system = ops.sessionPlanSystem("x");
+    expect(system).toContain("mode='NOT_A_DECISION'");
+    expect(system).toContain("Reality check");
+  });
+
   it("session-plan prompt includes the TOO_BIG scope check with knot decomposition", () => {
     const system = ops.sessionPlanSystem("x");
     expect(system).toContain("mode='TOO_BIG'");

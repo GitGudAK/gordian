@@ -79,6 +79,8 @@ struct MainView: View {
                 viewModel.startDemoSensitive()
             } else if ProcessInfo.processInfo.arguments.contains("-demoTooBig") {
                 viewModel.startDemoTooBig()
+            } else if ProcessInfo.processInfo.arguments.contains("-demoNonQuestion") {
+                viewModel.startDemoNonQuestion()
             } else if ProcessInfo.processInfo.arguments.contains("-demoRedeem") {
                 showRedeemDemo = true
             } else if ProcessInfo.processInfo.arguments.contains("-tabLogs") {
@@ -95,14 +97,19 @@ struct HeaderView: View {
     var viewModel: SessionViewModel
     @Binding var showSettings: Bool
 
-    // The home screen carries the brand in its hero — showing it here too says it twice (ticket #12)
-    private var showBrand: Bool {
-        !(viewModel.activeTab == .focus && viewModel.focusScreenState == .home)
+    // Brand is said once, by the home hero. Membership status lives on
+    // Logs/Guides only — session and verdict screens stay entirely quiet.
+    private var showBrand: Bool { false }
+
+    private var showMembership: Bool {
+        viewModel.activeTab == .calibrate || viewModel.activeTab == .insights
     }
 
     var body: some View {
         HStack {
-            if showBrand {
+            if showMembership {
+                MembershipChip()
+            } else if showBrand {
                 HStack(spacing: 12) {
                     Image("KnotLogo")
                         .resizable()
@@ -121,15 +128,60 @@ struct HeaderView: View {
                 showSettings = true
             } label: {
                 Image(systemName: "gearshape")
-                    .font(.system(size: 17))
-                    .foregroundColor(.textMuted)
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(.goldPrimary.opacity(0.85))
                     .frame(width: 40, height: 40)
-                    .background(Circle().fill(Color.darkSurfaceVariant))
+                    .background(Circle().fill(Color.white.opacity(0.04)))
+                    .overlay(Circle().stroke(Color.goldPrimary.opacity(0.25), lineWidth: 1))
             }
             .accessibilityLabel("Settings")
         }
         .padding(.horizontal, 24)
         .padding(.vertical, 12)
+    }
+}
+
+// Membership status chip for the Guides header: shiny gold for Premium,
+// outlined gold during the free week, muted after it ends
+struct MembershipChip: View {
+    var body: some View {
+        let entitlements = EntitlementManager.shared
+        if entitlements.isPurchased {
+            HStack(spacing: 6) {
+                Image(systemName: "sparkles")
+                    .font(.system(size: 11, weight: .bold))
+                Text("PREMIUM")
+                    .font(.system(size: 11, weight: .heavy))
+                    .tracking(2)
+            }
+            .foregroundColor(.black)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
+            .background(
+                Capsule().fill(LinearGradient(
+                    colors: [.goldAccent, .goldPrimary],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing))
+            )
+            .shadow(color: Color.goldPrimary.opacity(0.35), radius: 10, y: 2)
+        } else if entitlements.isInTrial {
+            let days = entitlements.trialDaysRemaining
+            Text("FREE WEEK · \(days) \(days == 1 ? "DAY" : "DAYS") LEFT")
+                .font(.system(size: 10, weight: .bold))
+                .tracking(1.2)
+                .foregroundColor(.goldPrimary)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 7)
+                .background(Capsule().stroke(Color.goldPrimary.opacity(0.4), lineWidth: 1))
+        } else {
+            Text("FREE WEEK ENDED")
+                .font(.system(size: 10, weight: .bold))
+                .tracking(1.2)
+                .foregroundColor(.textMuted)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 7)
+                .background(Capsule().stroke(Color.white.opacity(0.12), lineWidth: 1))
+        }
     }
 }
 

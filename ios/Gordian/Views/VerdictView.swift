@@ -7,8 +7,11 @@ struct VerdictView: View {
 
     var body: some View {
         ZStack {
-            // The animation IS the screen — content floats above it
-            CalmingAnimation(coreY: 0.18)
+            // The animation IS the screen — content floats above it. The canvas
+            // extends up behind the header so ripple rings complete instead of
+            // slicing at the view's top edge.
+            CalmingAnimation(coreY: 0.24)
+                .padding(.top, -160)
                 .ignoresSafeArea()
                 .allowsHitTesting(false)
 
@@ -141,12 +144,14 @@ struct VerdictView: View {
                 .padding(.bottom, 118)
             }
             .scrollIndicators(.hidden)
-            // Content dissolves at the bottom edge instead of hard-clipping
-            // against the nav bar
+            .scrollBounceBehavior(.basedOnSize)
+            // Content dissolves at both edges instead of hard-clipping —
+            // top against the header, bottom against the nav bar
             .mask(
                 LinearGradient(
                     stops: [
-                        .init(color: .black, location: 0),
+                        .init(color: .clear, location: 0),
+                        .init(color: .black, location: 0.05),
                         .init(color: .black, location: 0.90),
                         .init(color: .clear, location: 1)
                     ],

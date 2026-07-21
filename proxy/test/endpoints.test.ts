@@ -44,21 +44,20 @@ async function errorCode(res: Response): Promise<string> {
 }
 
 describe("happy paths", () => {
-  it("session-plan returns the session payload shape + weekly header", async () => {
-    // The captured questions fixture is an ARRAY payload from the spike era;
-    // wrap it in the session-plan OBJECT shape the schema now enforces.
-    const sessionPlanText = JSON.stringify({
-      mode: "BINARY",
-      optionA: "Spanish",
-      optionB: "German",
-      questions: JSON.parse(
-        (questionsFixture as { candidates: Array<{ content: { parts: Array<{ text: string }> } }> })
-          .candidates[0].content.parts[0].text,
-      ),
-    });
+  it("session-plan returns the session payload shape + weekly header (gate + questions calls)", async () => {
+    const spikeQuestions = JSON.parse(
+      (questionsFixture as { candidates: Array<{ content: { parts: Array<{ text: string }> } }> })
+        .candidates[0].content.parts[0].text,
+    );
+    // Call 1: cheap gate classifies. Call 2: premium model writes the questions.
     mockUpstreamText(
       JSON.stringify({
-        candidates: [{ content: { parts: [{ text: sessionPlanText }] }, finishReason: "STOP" }],
+        candidates: [{ content: { parts: [{ text: JSON.stringify({ mode: "BINARY", optionA: "Spanish", optionB: "German", questions: [] }) }] }, finishReason: "STOP" }],
+      }),
+    );
+    mockUpstreamText(
+      JSON.stringify({
+        candidates: [{ content: { parts: [{ text: JSON.stringify({ questions: spikeQuestions }) }] }, finishReason: "STOP" }],
       }),
     );
 
@@ -151,17 +150,19 @@ describe("bad_request contract", () => {
 });
 
 describe("upstream_error contract + AI-always fallback chain", () => {
-  it("primary failure falls back to the second model and succeeds", async () => {
+  it("gate + primary failure fall back to the second model and succeed", async () => {
     const goodBody = JSON.stringify({
       candidates: [
         { content: { parts: [{ text: '{"mode":"YES_NO","optionA":"No","optionB":"Yes","questions":["q?"]}' }] } },
       ],
     });
     const modelsSeen: string[] = [];
-    mockOnce(GEMINI_ORIGIN, (req) => {
+    const fail = (req: Request) => {
       modelsSeen.push(new URL(req.url).pathname);
       return new Response(JSON.stringify({ error: { code: 500, message: "boom" } }), { status: 500 });
-    });
+    };
+    mockOnce(GEMINI_ORIGIN, fail); // gate model
+    mockOnce(GEMINI_ORIGIN, fail); // primary (legacy single-call)
     mockOnce(GEMINI_ORIGIN, (req) => {
       modelsSeen.push(new URL(req.url).pathname);
       return new Response(goodBody, { status: 200, headers: { "content-type": "application/json" } });
@@ -169,24 +170,38 @@ describe("upstream_error contract + AI-always fallback chain", () => {
 
     const res = await post("/v1/session-plan", DEVICE, JSON.stringify({ scenario: "x" }));
     expect(res.status).toBe(200);
-    expect(modelsSeen[0]).toContain("gemini-3.5-flash");
-    expect(modelsSeen[1]).toContain("gemini-flash-latest");
+    expect(modelsSeen[0]).toContain("gemini-flash-lite-latest");
+    expect(modelsSeen[1]).toContain("gemini-3.5-flash");
+    expect(modelsSeen[2]).toContain("gemini-flash-latest");
   });
 
-  it("both models failing → 502 upstream_error", async () => {
-    mockUpstreamText(JSON.stringify({ error: { code: 500, message: "boom" } }), 500);
-    mockUpstreamText(JSON.stringify({ error: { code: 500, message: "boom again" } }), 500);
+  it("terminal gate classification returns without a premium call", async () => {
+    mockUpstreamText(
+      JSON.stringify({
+        candidates: [{ content: { parts: [{ text: '{"mode":"NOT_A_DECISION","optionA":"","optionB":"","questions":[]}' }] } }],
+      }),
+    );
+    const res = await post("/v1/session-plan", DEVICE, JSON.stringify({ scenario: "hello" }));
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { mode: string };
+    expect(body.mode).toBe("NOT_A_DECISION");
+    // one mock registered, one consumed: no second upstream call happened
+  });
+
+  it("all models failing → 502 upstream_error", async () => {
+    for (let i = 0; i < 3; i++) {
+      mockUpstreamText(JSON.stringify({ error: { code: 500, message: "boom" } }), 500);
+    }
     const res = await post("/v1/session-plan", DEVICE, JSON.stringify({ scenario: "x" }));
     expect(res.status).toBe(502);
     expect(await errorCode(res)).toBe("upstream_error");
   });
 
-  it("irreparable garbage from both attempts → 502 upstream_error", async () => {
+  it("irreparable garbage from every attempt → 502 upstream_error", async () => {
     const garbage = JSON.stringify({
       candidates: [{ content: { parts: [{ text: "I cannot answer in JSON, sorry" }] } }],
     });
-    mockUpstreamText(garbage);
-    mockUpstreamText(garbage);
+    for (let i = 0; i < 3; i++) mockUpstreamText(garbage);
     const res = await post("/v1/session-plan", DEVICE, JSON.stringify({ scenario: "x" }));
     expect(res.status).toBe(502);
     expect(await errorCode(res)).toBe("upstream_error");
