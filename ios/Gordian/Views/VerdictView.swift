@@ -6,24 +6,16 @@ struct VerdictView: View {
     var viewModel: SessionViewModel
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 20) {
-                // Calming header — sized to serve the answer, not precede it (ticket #6)
-                VStack(spacing: 6) {
-                    CalmingAnimation()
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 140)
-                    Text("THE KNOT, UNTIED")
-                        .font(.system(size: 21, weight: .heavy))
-                        .tracking(2.5)
-                        .foregroundColor(.goldPrimary)
-                        .multilineTextAlignment(.center)
-                    Text("TAKE A BREATH")
-                        .font(.system(size: 11, weight: .bold))
-                        .tracking(1.5)
-                        .foregroundColor(.textLight)
-                }
-                .padding(.vertical, 4)
+        ZStack {
+            // The animation IS the screen — content floats above it
+            CalmingAnimation(coreY: 0.18)
+                .ignoresSafeArea()
+                .allowsHitTesting(false)
+
+            ScrollView {
+                VStack(spacing: 20) {
+                    // Breathing room for the orb; its own text carries the moment
+                    Color.clear.frame(height: 230)
 
                 // Verdict card
                 VStack(spacing: 18) {
@@ -128,9 +120,9 @@ struct VerdictView: View {
                     }
                 }
             }
-            .padding(.horizontal, 24)
-            .padding(.top, 16)
-            .padding(.bottom, 24)
+                .padding(.horizontal, 24)
+                .padding(.bottom, 24)
+            }
         }
     }
 }

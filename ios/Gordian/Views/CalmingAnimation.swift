@@ -10,6 +10,10 @@ private struct Particle {
 }
 
 struct CalmingAnimation: View {
+    // Vertical position of the breathing core (0 = top, 1 = bottom). The verdict
+    // screen runs the animation full-screen with the core in the upper region.
+    var coreY: CGFloat = 0.5
+
     @State private var particles: [Particle] = (0..<25).map { _ in
         Particle(
             xSeed: CGFloat.random(in: 0...1),
@@ -34,7 +38,7 @@ struct CalmingAnimation: View {
 
             ZStack {
                 Canvas { context, size in
-                    let center = CGPoint(x: size.width / 2, y: size.height / 2)
+                    let center = CGPoint(x: size.width / 2, y: size.height * coreY)
                     let baseRadius = min(size.width, size.height) / 4.5
 
                     // 1. Glowing aura
@@ -56,8 +60,9 @@ struct CalmingAnimation: View {
                     )
 
                     // 2. Expanding ripple rings
+                    let rippleMax = min(size.width, size.height) / 2
                     for (progress, width) in [(ripple1, 2.0), (ripple2, 1.5)] where progress > 0 {
-                        let radius = baseRadius + (min(size.width, size.height) / 2 - baseRadius) * progress
+                        let radius = baseRadius + (rippleMax - baseRadius) * progress
                         let alpha = (1 - progress) * 0.35
                         let rect = CGRect(x: center.x - radius, y: center.y - radius,
                                           width: radius * 2, height: radius * 2)
@@ -109,15 +114,19 @@ struct CalmingAnimation: View {
                     )
                 }
 
-                VStack(spacing: 4) {
-                    Text((breatheScale > 1.0 ? "Breathe In Clarity" : "Release All Doubt").uppercased())
-                        .font(.system(size: 11, weight: .bold))
-                        .tracking(1.2)
-                        .foregroundColor(.white)
-                    Text("KNOT UNTIED")
-                        .font(.system(size: 9, weight: .bold))
-                        .tracking(1.5)
-                        .foregroundColor(.goldAccent.opacity(0.8))
+                GeometryReader { geo in
+                    VStack(spacing: 4) {
+                        Text((breatheScale > 1.0 ? "Breathe In Clarity" : "Release All Doubt").uppercased())
+                            .font(.system(size: 11, weight: .bold))
+                            .tracking(1.2)
+                            .foregroundColor(.white)
+                        Text("KNOT UNTIED")
+                            .font(.system(size: 9, weight: .bold))
+                            .tracking(1.5)
+                            .foregroundColor(.goldAccent.opacity(0.8))
+                    }
+                    .frame(maxWidth: .infinity)
+                    .position(x: geo.size.width / 2, y: geo.size.height * coreY)
                 }
             }
         }
