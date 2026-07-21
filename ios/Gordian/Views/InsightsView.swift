@@ -32,6 +32,7 @@ struct InsightsView: View {
             let total = decisions.count
             let split = decisions.filter { $0.choice == "REFLECT" }.count
             let decided = total - split
+            let acted = decisions.filter { $0.actedOn == "acted" }.count
 
             List {
                 Section {
@@ -39,6 +40,8 @@ struct InsightsView: View {
                         statColumn("Sessions", "\(total)", .white)
                         Spacer()
                         statColumn("Decided", "\(decided)", .goldPrimary)
+                        Spacer()
+                        statColumn("Acted on", "\(acted)", .goldAccent)
                         Spacer()
                         statColumn("Split", "\(split)", .textMuted)
                     }
@@ -96,6 +99,7 @@ private extension View {
 
 struct DecisionCard: View {
     let decision: DecisionLog
+    @Environment(\.modelContext) private var modelContext
     @State private var expanded = false
 
     private var outcomeLabel: String {
@@ -132,6 +136,14 @@ struct DecisionCard: View {
                 Text(decision.timestamp.formatted(.dateTime.month(.abbreviated).day().hour(.defaultDigits(amPM: .abbreviated)).minute()))
                 Text("·")
                 Text(decision.reflection)
+                if decision.actedOn == "acted" {
+                    Text("·")
+                    Label("Acted on", systemImage: "checkmark")
+                        .foregroundColor(.goldPrimary)
+                } else if decision.actedOn == "not_acted" {
+                    Text("·")
+                    Text("Not yet")
+                }
                 Spacer()
                 Image(systemName: expanded ? "chevron.up" : "chevron.down")
             }
@@ -144,6 +156,18 @@ struct DecisionCard: View {
                     .font(.footnote)
                     .lineSpacing(3)
                     .foregroundColor(.textMuted)
+
+                // Close the loop in-app too, not just from the notification
+                if decision.actedOn != "acted", decision.choice != "REFLECT" {
+                    HStack(spacing: 10) {
+                        Text("Did you act on it?")
+                            .font(.footnote)
+                            .foregroundColor(.textLight)
+                        Spacer()
+                        actedButton("Not yet", value: "not_acted", filled: false)
+                        actedButton("I did", value: "acted", filled: true)
+                    }
+                }
             }
         }
         .padding(16)
@@ -153,5 +177,24 @@ struct DecisionCard: View {
             withAnimation(.easeInOut(duration: 0.2)) { expanded.toggle() }
         }
         .accessibilityLabel("Session: \(decision.question). Outcome: \(outcomeLabel).")
+    }
+
+    private func actedButton(_ label: String, value: String, filled: Bool) -> some View {
+        Button {
+            decision.actedOn = value
+            try? modelContext.save()
+            if value == "acted" {
+                FollowUpManager.shared.cancelFollowUp(id: decision.followUpID)
+            }
+        } label: {
+            Text(label)
+                .font(.footnote.weight(.bold))
+                .foregroundColor(filled ? .black : .goldPrimary)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 8)
+                .background(Capsule().fill(filled ? Color.goldPrimary : Color.darkSurfaceVariant))
+                .overlay(Capsule().stroke(Color.goldPrimary.opacity(filled ? 0 : 0.5), lineWidth: 1))
+        }
+        .buttonStyle(.plain)
     }
 }

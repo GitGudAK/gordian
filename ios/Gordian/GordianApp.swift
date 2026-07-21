@@ -11,6 +11,10 @@ struct GordianApp: App {
         }
     }()
 
+    init() {
+        FollowUpManager.shared.configure(container: container)
+    }
+
     var body: some Scene {
         WindowGroup {
             MainView()

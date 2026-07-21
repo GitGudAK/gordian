@@ -433,7 +433,7 @@ final class SessionViewModel {
         sentimentLabel = sentiment
         aiReflection = analysis
         confrontedProbe = probe
-        insert(DecisionLog(
+        let log = DecisionLog(
             simulationTitle: selectedTopic.title,
             question: dilemmaScenario.isEmpty ? "Gordian Knot Untied" : dilemmaScenario,
             choice: majorityChoice,
@@ -441,7 +441,12 @@ final class SessionViewModel {
             reflection: "\(rapidFireAnswers.count) answers",
             aiAnalysis: logAnalysis,
             decision: decision
-        ))
+        )
+        insert(log)
+        // Close the loop: ask in a few days whether they acted on it (skip split verdicts)
+        if majorityChoice != "REFLECT" {
+            FollowUpManager.shared.scheduleFollowUp(decision: decision, followUpID: log.followUpID)
+        }
     }
 
     #if DEBUG
@@ -481,11 +486,13 @@ final class SessionViewModel {
     }
 
     func deleteDecision(_ log: DecisionLog) {
+        FollowUpManager.shared.cancelFollowUp(id: log.followUpID)
         modelContext?.delete(log)
         try? modelContext?.save()
     }
 
     func clearHistory() {
+        FollowUpManager.shared.cancelAllFollowUps()
         try? modelContext?.delete(model: DecisionLog.self)
         try? modelContext?.save()
     }

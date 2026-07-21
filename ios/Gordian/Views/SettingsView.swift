@@ -7,9 +7,8 @@ struct SettingsView: View {
     var viewModel: SessionViewModel
     @Environment(\.dismiss) private var dismiss
     @Query private var decisions: [DecisionLog]
-    @State private var apiKey = ""
     @State private var showPurgeConfirm = false
-    @FocusState private var keyFocused: Bool
+    @State private var followUpsEnabled = FollowUpManager.shared.followUpsEnabled
 
     var body: some View {
         NavigationStack {
@@ -18,24 +17,21 @@ struct SettingsView: View {
 
                 ScrollView {
                     VStack(alignment: .leading, spacing: 24) {
-                        // Gemini API key
+                        // Follow-ups
                         VStack(alignment: .leading, spacing: 12) {
-                            SectionLabel(text: "GEMINI API KEY", tracking: 1)
-                            Text("Add your own Gemini API key to get questions written for your exact dilemma. Without one, Gordian uses its built-in question set — fully functional, just less personal.")
+                            SectionLabel(text: "FOLLOW-UPS", tracking: 1)
+                            Toggle(isOn: $followUpsEnabled) {
+                                Text("Decision follow-ups")
+                                    .font(.subheadline)
+                                    .foregroundColor(.white)
+                            }
+                            .tint(.goldPrimary)
+                            .onChange(of: followUpsEnabled) { _, newValue in
+                                FollowUpManager.shared.followUpsEnabled = newValue
+                            }
+                            Text("A few days after a verdict, Gordian asks whether you acted on it. Answer straight from the notification.")
                                 .font(.footnote)
                                 .foregroundColor(.textMuted)
-                            SecureField(
-                                "",
-                                text: $apiKey,
-                                prompt: Text("API key").font(.footnote).foregroundColor(.textMuted)
-                            )
-                            .focused($keyFocused)
-                            .autocorrectionDisabled()
-                            .textInputAutocapitalization(.never)
-                            .modifier(GordianFieldStyle(focused: keyFocused))
-                            .onChange(of: apiKey) { _, newValue in
-                                viewModel.saveApiKey(newValue)
-                            }
                         }
                         .padding(16)
                         .gordianCard(cornerRadius: 16)
@@ -84,6 +80,5 @@ struct SettingsView: View {
                 }
             }
         }
-        .onAppear { apiKey = viewModel.savedApiKey }
     }
 }

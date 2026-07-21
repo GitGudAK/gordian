@@ -55,6 +55,9 @@ final class DecisionLog {
     var aiAnalysis: String
     var decision: String = ""
     var timestamp: Date
+    // Follow-up loop: "pending" until the user answers the did-you-act-on-it prompt
+    var actedOn: String = "pending"
+    var followUpID: String = UUID().uuidString
 
     init(simulationTitle: String, question: String, choice: String, sentiment: String,
          reflection: String, aiAnalysis: String, decision: String = "", timestamp: Date = Date()) {
