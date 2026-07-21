@@ -14,6 +14,10 @@ final class FollowUpManager: NSObject, UNUserNotificationCenterDelegate {
     static let actedActionID = "ACTED_YES"
     static let notYetActionID = "ACTED_NO"
     private static let enabledKey = "follow_ups_enabled"
+    private static let dailyKnotKey = "daily_knot_enabled"
+    private static let weeklyRecapKey = "weekly_recap_enabled"
+    private static let dailyKnotIDPrefix = "DAILY_KNOT_"
+    private static let weeklyRecapID = "WEEKLY_RECAP"
 
     private var container: ModelContainer?
 
@@ -24,6 +28,55 @@ final class FollowUpManager: NSObject, UNUserNotificationCenterDelegate {
             if !newValue { cancelAllFollowUps() }
         }
     }
+
+    // Daily Knot is opt-in — a daily notification must be chosen, never imposed
+    var dailyKnotEnabled: Bool {
+        get { UserDefaults.standard.object(forKey: Self.dailyKnotKey) as? Bool ?? false }
+        set {
+            UserDefaults.standard.set(newValue, forKey: Self.dailyKnotKey)
+            if newValue {
+                Task { await self.requestAuthAndRefresh() }
+            } else {
+                cancelDailyKnots()
+            }
+        }
+    }
+
+    var weeklyRecapEnabled: Bool {
+        get { UserDefaults.standard.object(forKey: Self.weeklyRecapKey) as? Bool ?? true }
+        set {
+            UserDefaults.standard.set(newValue, forKey: Self.weeklyRecapKey)
+            if newValue {
+                Task { await self.requestAuthAndRefresh() }
+            } else {
+                UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [Self.weeklyRecapID])
+            }
+        }
+    }
+
+    static let dailyKnotQuestions = [
+        "What did you avoid deciding today?",
+        "What would you do if you couldn't fail?",
+        "What decision have you been rationalizing instead of making?",
+        "Which open loop drains you most right now?",
+        "What would your 80-year-old self tell you to do today?",
+        "What are you pretending not to know?",
+        "If today repeated for a year, would that be fine?",
+        "What's the smallest step you're avoiding?",
+        "Whose approval are you waiting for — and why?",
+        "What deadline would force your hand, helpfully?",
+        "What choice keeps returning to your mind at night?",
+        "What would you drop if no one would notice?",
+        "Comfort or growth — which did you pick today?",
+        "What is fear currently costing you?",
+        "What decision would future-you thank you for?",
+        "Which yes should have been a no this week?",
+        "What are you overthinking right now?",
+        "If you had to decide in 60 seconds, what would it be?",
+        "What's one thing you know but keep ignoring?",
+        "Where are you seeking consensus to avoid owning a choice?",
+        "What knot have you been carrying all week?"
+    ]
 
     /// Call once at app start, before any notification can be delivered.
     func configure(container: ModelContainer) {
@@ -71,6 +124,106 @@ final class FollowUpManager: NSObject, UNUserNotificationCenterDelegate {
 
     func cancelAllFollowUps() {
         UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
+    }
+
+    private func cancelDailyKnots() {
+        let ids = (0...14).map { "\(Self.dailyKnotIDPrefix)\($0)" }
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ids)
+    }
+
+    private func requestAuthAndRefresh() async {
+        let center = UNUserNotificationCenter.current()
+        _ = try? await center.requestAuthorization(options: [.alert, .sound, .badge])
+        refreshScheduledContent()
+    }
+
+    /// Re-plans Daily Knot and Weekly Recap. Call on app foreground — content is
+    /// recomputed each time so recap numbers stay fresh. Only schedules when the
+    /// user has already granted notification permission.
+    func refreshScheduledContent() {
+        Task {
+            let center = UNUserNotificationCenter.current()
+            let settings = await center.notificationSettings()
+            guard settings.authorizationStatus == .authorized || settings.authorizationStatus == .provisional else { return }
+            let calendar = Calendar.current
+
+            #if DEBUG
+            // -fastDailyKnot: fire a Daily Knot in 6s and a Weekly Recap in 14s so the
+            // experience can be seen without waiting for 9:00 or Sunday
+            if ProcessInfo.processInfo.arguments.contains("-fastDailyKnot") {
+                let knot = UNMutableNotificationContent()
+                knot.title = "The Daily Knot"
+                knot.body = Self.dailyKnotQuestions[(calendar.ordinality(of: .day, in: .year, for: Date()) ?? 0) % Self.dailyKnotQuestions.count]
+                knot.sound = .default
+                try? await center.add(UNNotificationRequest(
+                    identifier: "\(Self.dailyKnotIDPrefix)DEMO",
+                    content: knot,
+                    trigger: UNTimeIntervalNotificationTrigger(timeInterval: 6, repeats: false)
+                ))
+                let recap = UNMutableNotificationContent()
+                recap.title = "Your week in decisions"
+                recap.body = weeklyRecapBody() ?? "This week: 2 knots untied, 1 acted on."
+                recap.sound = .default
+                try? await center.add(UNNotificationRequest(
+                    identifier: "\(Self.weeklyRecapID)_DEMO",
+                    content: recap,
+                    trigger: UNTimeIntervalNotificationTrigger(timeInterval: 14, repeats: false)
+                ))
+            }
+            #endif
+
+            // Daily Knot: next 7 mornings at 9:00, a different question each day
+            if dailyKnotEnabled {
+                cancelDailyKnots()
+                let dayOfYear = calendar.ordinality(of: .day, in: .year, for: Date()) ?? 0
+                for offset in 0..<7 {
+                    guard let day = calendar.date(byAdding: .day, value: offset, to: calendar.startOfDay(for: Date())) else { continue }
+                    var components = calendar.dateComponents([.year, .month, .day], from: day)
+                    components.hour = 9
+                    guard let fireDate = calendar.date(from: components), fireDate > Date() else { continue }
+                    let content = UNMutableNotificationContent()
+                    content.title = "The Daily Knot"
+                    content.body = Self.dailyKnotQuestions[(dayOfYear + offset) % Self.dailyKnotQuestions.count]
+                    content.sound = .default
+                    try? await center.add(UNNotificationRequest(
+                        identifier: "\(Self.dailyKnotIDPrefix)\(offset)",
+                        content: content,
+                        trigger: UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
+                    ))
+                }
+            }
+
+            // Weekly Recap: next Sunday 18:00 — only when this week actually had sessions
+            center.removePendingNotificationRequests(withIdentifiers: [Self.weeklyRecapID])
+            if weeklyRecapEnabled, let body = weeklyRecapBody() {
+                let content = UNMutableNotificationContent()
+                content.title = "Your week in decisions"
+                content.body = body
+                content.sound = .default
+                var components = DateComponents()
+                components.weekday = 1
+                components.hour = 18
+                try? await center.add(UNNotificationRequest(
+                    identifier: Self.weeklyRecapID,
+                    content: content,
+                    trigger: UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
+                ))
+            }
+        }
+    }
+
+    /// nil when the week has no sessions — no sessions, no notification (never nag)
+    private func weeklyRecapBody() -> String? {
+        guard let container else { return nil }
+        let calendar = Calendar.current
+        guard let weekStart = calendar.dateInterval(of: .weekOfYear, for: Date())?.start else { return nil }
+        let descriptor = FetchDescriptor<DecisionLog>(predicate: #Predicate { $0.timestamp >= weekStart })
+        guard let logs = try? container.mainContext.fetch(descriptor), !logs.isEmpty else { return nil }
+        let acted = logs.filter { $0.actedOn == "acted" }.count
+        let knots = logs.count
+        var body = "This week: \(knots) knot\(knots == 1 ? "" : "s") untied"
+        body += acted > 0 ? ", \(acted) acted on." : "."
+        return body
     }
 
     // MARK: - UNUserNotificationCenterDelegate

@@ -324,36 +324,49 @@ final class SessionViewModel {
         let probe: String
     }
 
-    // Direct answer derived from the answer tally — used when there's no API key
-    // or the Gemini call fails. Returns (decision text, majority choice for the log).
-    private func tallyDecision() -> (String, String) {
+    // Verdict content derived from the answer tally — used when there's no API key
+    // or the Gemini call fails. Returns (decision, majority choice, why, next step).
+    private func tallyDecision() -> (String, String, String, String) {
         let total = rapidFireAnswers.count
+        let checkIn = FollowUpManager.shared.followUpsEnabled
+            ? " Gordian will check in with you in 3 days."
+            : ""
         if total == 0 {
-            return ("No gut answers logged — the knot stays tied. Run it again and answer fast.", "REFLECT")
+            return (
+                "No answers — the knot stays tied.",
+                "REFLECT",
+                "You didn't answer any questions this round, so there's no lean to read.",
+                "Run it again and answer the instant each question appears — speed is the whole point."
+            )
         }
         let left = answerMode.leftLabel
         let right = answerMode.rightLabel
         let leftCount = rapidFireAnswers.filter { $0.choice.caseInsensitiveCompare(left) == .orderedSame }.count
         let rightCount = rapidFireAnswers.filter { $0.choice.caseInsensitiveCompare(right) == .orderedSame }.count
+        let winner = rightCount >= leftCount ? right : left
+        let winnerCount = max(leftCount, rightCount)
 
+        if leftCount == rightCount {
+            return (
+                "Dead even — your gut is genuinely split.",
+                "REFLECT",
+                "You answered \(left) and \(right) equally (\(leftCount)–\(rightCount)). That's not indecision — the options really are balanced for you right now.",
+                "Sharpen the question and run it again — for example, add a deadline or a condition that would tip it."
+            )
+        }
+
+        let decision: String
         switch answerMode {
         case .yesNo:
-            if rightCount > leftCount {
-                return ("Your gut says YES — \(rightCount) of \(total) rapid answers leaned toward action.", "YES")
-            }
-            if leftCount > rightCount {
-                return ("Your gut says NO — \(leftCount) of \(total) rapid answers pulled away.", "NO")
-            }
-            return ("Dead even (\(rightCount)–\(leftCount)) — your gut is genuinely split. Sit with the probe below.", "REFLECT")
+            decision = winner == right
+                ? "Your gut says YES."
+                : "Your gut says NO."
         case .binary:
-            if rightCount > leftCount {
-                return ("Your gut picked \(right.uppercased()) — \(rightCount) of \(total) rapid answers.", right)
-            }
-            if leftCount > rightCount {
-                return ("Your gut picked \(left.uppercased()) — \(leftCount) of \(total) rapid answers.", left)
-            }
-            return ("Dead even between \(left) and \(right) — your gut is genuinely split. Sit with the probe below.", "REFLECT")
+            decision = "Your gut picked \(winner.uppercased())."
         }
+        let why = "Under a 60-second clock you chose \(winner.uppercased()) \(winnerCount) times out of \(total). Answers that fast skip second-guessing — a lean that consistent is your actual preference."
+        let nextStep = "Pick one small step toward it and do it today.\(checkIn)"
+        return (decision, winner == right && answerMode == .yesNo ? "YES" : (answerMode == .yesNo ? "NO" : winner), why, nextStep)
     }
 
     func evaluateFullSessionAndLog() {
@@ -368,15 +381,14 @@ final class SessionViewModel {
             .joined(separator: "\n")
 
         guard let client else {
-            let (decision, majority) = tallyDecision()
-            let analysis = "That tally is your subconscious talking — 60 seconds is too fast for rationalizing. Trust the direction it pointed."
+            let (decision, majority, why, nextStep) = tallyDecision()
             applyVerdict(
                 decision: decision,
                 majorityChoice: majority,
-                sentiment: "DECIDED",
-                analysis: analysis,
-                probe: "What is the first concrete step, and when will you take it?",
-                logAnalysis: analysis
+                sentiment: majority == "REFLECT" ? "SPLIT" : "DECIDED",
+                analysis: why,
+                probe: nextStep,
+                logAnalysis: why
             )
             return
         }
@@ -394,7 +406,7 @@ final class SessionViewModel {
                 + "1. \"decision\": THE answer. One direct, decisive sentence answering the user's dilemma in their own terms (max 15 words). If the dilemma is a choice between two options, NAME the winner. No hedging, no mysticism. Example: 'Learn Spanish.' or 'Take the startup job.'\n"
                 + "2. \"sentiment\": A single short affective state (e.g., 'RESOLVED', 'EMERGENT CLARITY', 'DIVIDED GUTS').\n"
                 + "3. \"analysis\": 2-3 plain, concrete sentences explaining WHY that is their answer, referencing their actual rapid-fire responses. Everyday language — no jargon, no 'cognitive alignment' talk.\n"
-                + "4. \"probe\": One practical follow-up question that pushes them toward the first concrete step.\n"
+                + "4. \"probe\": One concrete, small first action the user should take, phrased as a direct instruction (max 15 words). Not a question.\n"
                 + "Output ONLY the JSON object. Do not include markdown or formatting."
             do {
                 let verdict = try await client.generateObject(
@@ -404,7 +416,7 @@ final class SessionViewModel {
                     user: "Synthesize a final Gordian Verdict and return JSON.",
                     temperature: 0.8
                 )
-                let (_, majority) = tallyDecision()
+                let (_, majority, _, _) = tallyDecision()
                 applyVerdict(
                     decision: verdict.decision,
                     majorityChoice: majority,
@@ -414,15 +426,14 @@ final class SessionViewModel {
                     logAnalysis: "\(verdict.analysis)\n\n**CONFRONTED PROBE:** \(verdict.probe)"
                 )
             } catch {
-                let (decision, majority) = tallyDecision()
-                let analysis = "The AI verdict was unavailable, so this is the raw tally of your answers. 60 seconds is too fast for rationalizing — trust the direction it pointed."
+                let (decision, majority, why, nextStep) = tallyDecision()
                 applyVerdict(
                     decision: decision,
                     majorityChoice: majority,
-                    sentiment: "DECIDED",
-                    analysis: analysis,
-                    probe: "What is the first concrete step, and when will you take it?",
-                    logAnalysis: analysis
+                    sentiment: majority == "REFLECT" ? "SPLIT" : "DECIDED",
+                    analysis: why,
+                    probe: nextStep,
+                    logAnalysis: why
                 )
             }
         }

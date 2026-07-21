@@ -47,6 +47,7 @@ struct MainView: View {
         }
         .onAppear {
             viewModel.modelContext = modelContext
+            FollowUpManager.shared.refreshScheduledContent()
             #if DEBUG
             if ProcessInfo.processInfo.arguments.contains("-demoSession") {
                 viewModel.startDemoSession()
