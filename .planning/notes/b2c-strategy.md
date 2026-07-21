@@ -33,5 +33,28 @@ Session ≈ 3 calls ≈ <$0.01. Heavy user ≈ $0.10–0.30/month. Price from va
 4. Phase 5: launch readiness (copy compliance, crisis path, privacy labels, screenshots)
 5. Launch + content loop
 
+## Coupons & gifted access (user direction 2026-07-20)
+
+Two grant types the operator can hand out, done the Apple-native way (how Endel, Calm, etc. run partner/press promos — no custom redemption backend, no App Review 3.1.1 risk from self-built unlock codes):
+
+**Product catalog (StoreKit 2, Phase 3.5):**
+- `plus.monthly` — auto-renewable, $3.99/mo
+- `plus.annual` — auto-renewable, $19.99/yr
+- `plus.lifetime` — non-consumable (price TBD, ~$49.99)
+
+**1. "3 months access" → App Store Offer Codes** on the subscription:
+- Created in App Store Connect (subscription → Offer Codes): a "3 months free" offer, issued either as memorable custom codes with redemption limits (e.g. `GORDIAN-LAUNCH`) or one-time-use code batches (CSV export for partners/press).
+- Redeemed in-app via StoreKit's offer-code redemption sheet, or via link `https://apps.apple.com/redeem?ctx=offercodes&id=<appId>&code=<CODE>`.
+- Capacity: up to 150,000 codes per app per quarter — effectively unlimited at our scale. Apple handles expiry, one-use enforcement, and the transition to paid after 3 months.
+
+**2. "Lifetime access" → App Store Promo Codes** for the `plus.lifetime` non-consumable:
+- App Store Connect promo codes grant the IAP free; limit 100 per product per app version (refreshes each release) — right-sized for press, friends & family, and super-fans.
+- Redeemed on the App Store redeem page or via redeem link.
+- If >100/version is ever needed: ship versions more frequently, or revisit — do NOT build self-managed unlock codes (App Review Guideline 3.1.1 risk; also breaks with anonymous, serverless entitlements).
+
+**Entitlement resolution (app-side, no server):** Plus = active subscription entitlement OR owned `plus.lifetime` transaction, via StoreKit 2 `Transaction.currentEntitlements`. Works fully offline, consistent with the anonymous/local-only privacy constant.
+
+**Redemption UX:** Settings → "Redeem a code" row → offer-code sheet (subscriptions) + a small "have a promo code?" link to the App Store redeem page (lifetime).
+
 ## North-star metric
 "Decisions acted on" (from the follow-up loop) — retention driver, paywall justification, and a defensible marketing claim.

@@ -27,8 +27,8 @@
 
 ### Phase 3.5: Monetization
 **Status:** Pending
-**Goal:** Honest freemium: unlimited offline sessions free, 3 AI sessions/week metered, Gordian Plus subscription ($3.99/mo, $19.99/yr via StoreKit 2) unlocks unlimited AI. Paywall never dead-ends a session.
-**Requirements:** REQ-006 (never dead-end) + `.planning/notes/b2c-strategy.md`
+**Goal:** Honest freemium: unlimited offline sessions free, 3 AI sessions/week metered, Gordian Plus (monthly/annual subscription + lifetime non-consumable via StoreKit 2) unlocks unlimited AI. Coupon infrastructure: subscription Offer Codes (3-months-free grants) and promo codes for lifetime — Apple-native, no custom redemption backend. Settings gains a "Redeem a code" row. Paywall never dead-ends a session.
+**Requirements:** REQ-006 (never dead-end) + `.planning/notes/b2c-strategy.md` (products, coupon design)
 **Depends on:** Phase 3
 
 ### Phase 4: Native Polish Pass

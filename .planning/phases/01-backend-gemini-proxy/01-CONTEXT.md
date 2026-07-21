@@ -27,6 +27,11 @@ A deployed HTTP service that fronts the Gemini API for the Gordian iOS app. It o
 - Per-device rate limits sized to the product (a session ≈ 3 calls); hard daily global spend cap; input length caps on dilemma text.
 - When a cap is hit, return a distinct error code the app maps to its local-fallback ladder.
 
+### Business hooks (locked, from b2c-strategy 2026-07-20)
+- Proxy counts AI sessions per device — Phase 3.5's freemium meter (3 AI sessions/week free) reads this count. Design the counter now even if the meter enforces later.
+- Model must be swappable server-side per operation (bake-off: Gemini flash vs Claude Haiku 4.5; hybrid Haiku-questions/Sonnet-verdict is on the table). Endpoints are operation-shaped, not model-shaped.
+- Future: serves `guides.json` (remote guide content for new-guide notifications). Reserve the route; content can come later.
+
 ### Claude's Discretion
 - Hosting platform, language/framework, storage for rate-limit counters, exact limit numbers, App Attest verification implementation details, deployment pipeline. Bias: smallest respectable option; ~7s upstream calls must fit platform timeout limits.
 
@@ -45,6 +50,7 @@ A deployed HTTP service that fronts the Gemini API for the Gordian iOS app. It o
 ### Product constraints
 - `.planning/REQUIREMENTS.md` — REQ-001/002/003/005/006
 - `.planning/notes/ios-product-direction.md` — why proxy, why anonymous
+- `.planning/notes/b2c-strategy.md` — session metering, model bake-off, freemium hooks
 - `.planning/research/questions.md` — open abuse-protection questions this phase must answer
 
 </canonical_refs>
