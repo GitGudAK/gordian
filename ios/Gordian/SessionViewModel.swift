@@ -365,10 +365,12 @@ final class SessionViewModel {
             reflectionText: reflectionText == "Listening to your gut..." ? "" : reflectionText
         ))
         transcription = ""
-        if !activeQuestions.isEmpty {
-            currentQuestionIndex = (currentQuestionIndex + 1) % activeQuestions.count
+        // Last question answered → straight to the verdict, even mid-countdown.
+        // Questions never repeat.
+        if currentQuestionIndex + 1 >= activeQuestions.count {
+            evaluateFullSessionAndLog()
         } else {
-            currentQuestionIndex = 0
+            currentQuestionIndex += 1
         }
     }
 
