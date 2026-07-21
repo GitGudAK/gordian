@@ -34,12 +34,17 @@ struct PaywallView: View {
 
                 VStack(spacing: 12) {
                     if entitlements.products.isEmpty {
-                        ProgressView()
-                            .tint(.goldPrimary)
-                            .padding(.vertical, 24)
-                        Text("Loading plans…")
-                            .font(.system(size: 12))
-                            .foregroundColor(.textMuted)
+                        #if DEBUG
+                        if ProcessInfo.processInfo.arguments.contains("-demoPaywall") {
+                            planButton(label: "Monthly", priceText: "$4.99 / month", isLifetime: false, isBestValue: false) {}
+                            planButton(label: "Annual", priceText: "$29.99 / year", isLifetime: false, isBestValue: true) {}
+                            planButton(label: "Lifetime", priceText: "$69.99 once, forever", isLifetime: true, isBestValue: false) {}
+                        } else {
+                            loadingPlans
+                        }
+                        #else
+                        loadingPlans
+                        #endif
                     } else {
                         ForEach(entitlements.products, id: \.id) { product in
                             productButton(product)
@@ -70,20 +75,38 @@ struct PaywallView: View {
         }
     }
 
+    private var loadingPlans: some View {
+        VStack(spacing: 8) {
+            Text("Loading plans…")
+                .font(.system(size: 12))
+                .foregroundColor(.textMuted)
+                .padding(.vertical, 24)
+        }
+    }
+
     @ViewBuilder
     private func productButton(_ product: Product) -> some View {
-        let isLifetime = product.id == EntitlementManager.lifetimeID
-        Button {
+        planButton(
+            label: label(for: product),
+            priceText: price(for: product),
+            isLifetime: product.id == EntitlementManager.lifetimeID,
+            isBestValue: product.id == EntitlementManager.annualID
+        ) {
             purchasing = true
             Task {
                 defer { purchasing = false }
                 try? await entitlements.purchase(product)
             }
-        } label: {
+        }
+    }
+
+    @ViewBuilder
+    private func planButton(label: String, priceText: String, isLifetime: Bool, isBestValue: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
             VStack(spacing: 3) {
-                Text(label(for: product))
+                Text(label)
                     .font(.system(size: 15, weight: .bold))
-                Text(price(for: product))
+                Text(priceText)
                     .font(.system(size: 12))
                     .opacity(0.8)
             }
@@ -98,6 +121,19 @@ struct PaywallView: View {
                 RoundedRectangle(cornerRadius: 16)
                     .stroke(isLifetime ? Color.goldPrimary.opacity(0.5) : .clear, lineWidth: 1)
             )
+            .overlay(alignment: .topTrailing) {
+                if isBestValue {
+                    Text("BEST VALUE")
+                        .font(.system(size: 9, weight: .heavy))
+                        .tracking(1)
+                        .foregroundColor(.goldPrimary)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Capsule().fill(Color.darkBackground))
+                        .overlay(Capsule().stroke(Color.goldPrimary.opacity(0.6), lineWidth: 1))
+                        .offset(x: -10, y: -9)
+                }
+            }
         }
         .disabled(purchasing)
     }
