@@ -83,11 +83,6 @@ struct VerdictView: View {
                 .padding(24)
                 .gordianCard(borderColor: Color.goldPrimary.opacity(0.35), borderWidth: 1.5)
 
-                Text("Reflects your own answers, not advice.")
-                    .font(.system(size: 10))
-                    .foregroundColor(.textMuted.opacity(0.8))
-                    .frame(maxWidth: .infinity)
-
                 if !viewModel.isLoading {
                     VStack(spacing: 10) {
                         Button {
@@ -123,11 +118,42 @@ struct VerdictView: View {
                             .overlay(RoundedRectangle(cornerRadius: 24).stroke(Color.white.opacity(0.1), lineWidth: 1))
                         }
                     }
+
+                    // Disclaimer — quiet close to the scroll, set off by a hairline
+                    VStack(spacing: 10) {
+                        Rectangle()
+                            .fill(Color.goldPrimary.opacity(0.25))
+                            .frame(width: 44, height: 1)
+                        Text("Gordian is a self-reflection exercise. This verdict mirrors your own answers and is not medical, legal, financial, or professional advice. For decisions with serious consequences, consult a qualified professional.")
+                            .font(.system(size: 11))
+                            .lineSpacing(4)
+                            .foregroundColor(.textMuted)
+                            .multilineTextAlignment(.center)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .padding(.horizontal, 12)
+                    }
+                    .padding(.top, 10)
                 }
             }
                 .padding(.horizontal, 24)
-                .padding(.bottom, 24)
+                // Clear the floating nav bar entirely: content scrolls to rest
+                // above it, never sliced beneath it
+                .padding(.bottom, 118)
             }
+            .scrollIndicators(.hidden)
+            // Content dissolves at the bottom edge instead of hard-clipping
+            // against the nav bar
+            .mask(
+                LinearGradient(
+                    stops: [
+                        .init(color: .black, location: 0),
+                        .init(color: .black, location: 0.90),
+                        .init(color: .clear, location: 1)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
         }
     }
 }
