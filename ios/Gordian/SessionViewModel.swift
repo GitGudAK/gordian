@@ -223,9 +223,11 @@ final class SessionViewModel {
     }
 
     func clearLockoutIfExpired() {
-        if focusScreenState == .lockedOut && !isLockedOut {
-            focusScreenState = .home
-        }
+        guard !isLockedOut else { return }
+        UserDefaults.standard.removeObject(forKey: Self.lockoutKey)
+        // Unconditional assignment: also re-renders the home branch that shows
+        // the lock screen directly (not via the .lockedOut state)
+        focusScreenState = .home
     }
 
     // Instant client-side screen for clearly dangerous phrasing; the proxy's
@@ -471,7 +473,7 @@ final class SessionViewModel {
                     sentiment: verdict.sentiment.uppercased(),
                     analysis: verdict.analysis,
                     probe: verdict.probe,
-                    logAnalysis: "\(verdict.analysis)\n\n**CONFRONTED PROBE:** \(verdict.probe)"
+                    logAnalysis: "\(verdict.analysis)\n\nNext step: \(verdict.probe)"
                 )
             } catch {
                 // Offline / limited → honest tally verdict, same as always.

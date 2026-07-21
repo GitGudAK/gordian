@@ -35,12 +35,9 @@ struct MainView: View {
                 }
             }
 
-            if viewModel.isLoading {
-                Color.black.opacity(0.6).ignoresSafeArea()
-                ProgressView()
-                    .controlSize(.large)
-                    .tint(.goldPrimary)
-            }
+            // (The Android port's global loading overlay lived here — full-screen
+            // dim + system spinner. Removed: each screen presents its own
+            // considered loading state.)
         }
         .sheet(isPresented: $showRedeemDemo) {
             RedeemCodeView()
@@ -280,9 +277,13 @@ struct FocusTabView: View {
         Group {
             switch viewModel.focusScreenState {
             case .home:
-                // Trial over + nothing purchased → the paywall replaces home.
+                // An active safety lock owns the screen outright — the user
+                // sees it before typing anything, not after submitting.
+                // Then: trial over + nothing purchased → paywall replaces home.
                 // A session already in flight (below) always gets to finish.
-                if EntitlementManager.shared.hasAccess {
+                if viewModel.isLockedOut {
+                    LockoutView(viewModel: viewModel)
+                } else if EntitlementManager.shared.hasAccess {
                     FocusHomeView(viewModel: viewModel, speech: speech)
                 } else {
                     PaywallView()
