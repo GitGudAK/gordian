@@ -105,7 +105,14 @@ crisis-resources line is supportive, not descriptive).
 6. **Archive & upload** — in Xcode: Product → Archive (device target), Organizer → Distribute → App Store Connect. (Requires your signing; cannot be done headless without your account.)
 7. **TestFlight yourself for a day** — install on your real phone; the purchase flow, notifications, and mic behave differently on-device than in the Simulator.
 8. **Submit for review** with the review notes above.
-9. **After approval:** mint offer codes + promo codes; paste the app's numeric Apple ID into `RedeemCodeView.appStoreID` so redeem links pre-fill (ship in 1.0.1).
+9. **After approval — launch-day codes (~10 min):**
+   - Offer codes: Subscriptions → Gordian Monthly → Offer Codes → Create Offer
+     (Free, 3 periods, all eligibility) → custom code `GORDIAN-LAUNCH`
+     (cap ~200, 30-day expiry) + a 25-code one-time-use batch for gifts.
+   - Promo codes: version page → Gordian Lifetime → generate on demand
+     (100/version, single-use, 28-day expiry — mint when handing out).
+   - Paste the app's numeric Apple ID into `RedeemCodeView.appStoreID` so
+     redeem links pre-fill (ship in 1.0.1).
 
 ## Known non-blockers (documented)
 
