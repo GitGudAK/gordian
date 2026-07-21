@@ -1,0 +1,31 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "gordian-proxy",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-07-01",
+  "observability": {
+    "enabled": true
+  },
+  // All limits and model choices are tunable per deploy — no code change, no app release.
+  "vars": {
+    "MODEL_SESSION_PLAN": "gemini:gemini-3.5-flash",
+    "MODEL_VERDICT": "gemini:gemini-3.5-flash",
+    "DAILY_CALL_CAP": "1500",
+    "RATE_LIMIT_CALLS": "6",
+    "RATE_LIMIT_WINDOW_MIN": "10",
+    "DEVICE_DAILY_SESSIONS": "20",
+    "MAX_SCENARIO_CHARS": "500"
+  },
+  "durable_objects": {
+    "bindings": [
+      { "name": "DEVICE_METER", "class_name": "DeviceMeterDO" },
+      { "name": "SPEND_CAP", "class_name": "SpendCapDO" }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["DeviceMeterDO", "SpendCapDO"]
+    }
+  ]
+}

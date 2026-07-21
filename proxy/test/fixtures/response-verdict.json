@@ -1,0 +1,22 @@
+{
+  "candidates": [
+    {
+      "content": {
+        "parts": [
+          {
+            "text": "{\"sentiment\": \"EMERGENT CLARITY\", \"analysis\": \"Your rapid answers show a consistent lean toward growth over safety. The hesitation is loss-aversion, not genuine doubt. Your gut has already signed the offer letter; your analytical brain is negotiating exit terms.\", \"probe\": \"What is the first sentence of your resignation letter?\"}"
+          }
+        ],
+        "role": "model"
+      },
+      "finishReason": "STOP",
+      "index": 0
+    }
+  ],
+  "usageMetadata": {
+    "promptTokenCount": 260,
+    "candidatesTokenCount": 90,
+    "totalTokenCount": 350
+  },
+  "modelVersion": "gemini-3.5-flash"
+}

@@ -1,0 +1,22 @@
+{
+  "candidates": [
+    {
+      "content": {
+        "parts": [
+          {
+            "text": "{\"mode\": \"YES_NO\", \"optionA\": \"No\", \"optionB\": \"Yes\", \"questions\": [\"Does the thought of it energize you?\", \"Would future-you regret skipping this?\", \"Is fear the only thing stopping you?\", \"Do you already know the answer?\"]"
+          }
+        ],
+        "role": "model"
+      },
+      "finishReason": "STOP",
+      "index": 0
+    }
+  ],
+  "usageMetadata": {
+    "promptTokenCount": 180,
+    "candidatesTokenCount": 96,
+    "totalTokenCount": 276
+  },
+  "modelVersion": "gemini-3.5-flash"
+}
