@@ -189,7 +189,9 @@ struct KnotGlyph: View {
 
     var body: some View {
         Canvas { context, size in
-            let r = min(size.width, size.height) * 0.34
+            // r*1.55 + half the stroke must stay inside the frame: 0.28 fits
+            // with margin (0.34 overflowed ~5% per side and clipped the tips)
+            let r = min(size.width, size.height) * 0.28
             let offset = r * 0.55
             let center = CGPoint(x: size.width / 2, y: size.height / 2)
             let lineWidth = min(size.width, size.height) * 0.1
