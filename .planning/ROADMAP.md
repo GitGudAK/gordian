@@ -20,7 +20,7 @@
 **Notes:** Expect first-build fixups — the port was written without a compiler. Close spike 003/004 verification here.
 
 ### Phase 3: Proxy Integration & BYO-Key Removal
-**Status:** Pending
+**Status:** Complete (2026-07-21) — app calls the live proxy via anonymous device ID (App Attest deferred to post-launch per locked decision); GeminiClient + all key plumbing deleted; offline fallback ladder intact
 **Goal:** The iOS app calls the Phase 1 proxy with App Attest, the Calibrate key-entry UX is removed, and sessions degrade gracefully (loading states sized for ~7s, fallback ladder intact).
 **Requirements:** REQ-001, REQ-002, REQ-003, REQ-006
 **Depends on:** Phase 1, Phase 2

@@ -163,23 +163,9 @@ final class SessionViewModel {
         activeQuestions = availableTopics[0].defaultQuestions
     }
 
-    // MARK: - API key (SharedPreferences → UserDefaults)
+    // MARK: - AI backend (Phase 3: operator proxy, no keys in the app)
 
-    private var apiKey: String {
-        UserDefaults.standard.string(forKey: "gemini_api_key") ?? ""
-    }
-
-    func saveApiKey(_ key: String) {
-        UserDefaults.standard.set(key, forKey: "gemini_api_key")
-    }
-
-    var savedApiKey: String { apiKey }
-
-    private var client: GeminiClient? {
-        let key = apiKey
-        guard !key.isEmpty, key != "MY_GEMINI_API_KEY" else { return nil }
-        return GeminiClient(apiKey: key)
-    }
+    private let proxy = ProxyClient()
 
     // MARK: - Dilemma setup
 
@@ -202,7 +188,7 @@ final class SessionViewModel {
         startTimer()
     }
 
-    // Heuristic "X or Y" extraction for the no-key fallback (Gemini does this properly)
+    // Heuristic "X or Y" extraction for the offline fallback (the proxy does this properly)
     private func parseBinaryOptions(from scenario: String) -> (String, String)? {
         let lower = scenario.lowercased()
         guard let orRange = lower.range(of: " or ") else { return nil }
@@ -216,59 +202,22 @@ final class SessionViewModel {
         return (optionA.capitalized, optionB.capitalized)
     }
 
-    private struct SessionPlanPayload: Decodable {
-        let mode: String
-        let optionA: String
-        let optionB: String
-        let questions: [String]
-    }
-
     private func generateBypassQuestionsAndStart() {
         let scenario = dilemmaScenario
-
-        guard let client else {
-            if let (a, b) = parseBinaryOptions(from: scenario) {
-                beginSession(with: Self.fallbackBinaryQuestions, mode: .binary(a, b))
-            } else {
-                beginSession(with: Self.fallbackBypassQuestions, mode: .yesNo)
-            }
-            return
-        }
 
         Task {
             isGeneratingQuestions = true
             defer { isGeneratingQuestions = false }
-            let system = "You are an expert cognitive psychologist specializing in rapid gut-instinct bypass. "
-                + "The user has a dilemma: '\(scenario)'.\n"
-                + "STEP 1 — Classify the dilemma. If it is a choice between two named alternatives (e.g. 'Spanish or German', 'take the job or stay'), set mode='BINARY' and extract short Title Case labels (1-3 words) as optionA and optionB. "
-                + "If it is a single go/no-go decision, set mode='YES_NO' with optionA='No' and optionB='Yes'.\n"
-                + "STEP 2 — Generate exactly 12 rapid-fire, high-intensity bypass questions (maximum 12 words each) designed to bypass the analytical brain and force an immediate gut response. "
-                + "CRITICAL: every question must be answerable INSTANTLY by tapping one of the two option buttons. "
-                + "For BINARY mode, frame questions like 'Which one would you start tonight?' or 'Which would you regret never trying?' — never yes/no phrasing. "
-                + "For YES_NO mode, use yes/no phrasing.\n"
-                + "Return JSON: {\"mode\": ..., \"optionA\": ..., \"optionB\": ..., \"questions\": [12 strings]}. Output ONLY the JSON object."
             do {
-                let plan = try await client.generateObject(
-                    SessionPlanPayload.self,
-                    schema: .object(
-                        properties: [
-                            "mode": .string,
-                            "optionA": .string,
-                            "optionB": .string,
-                            "questions": .stringArray
-                        ],
-                        required: ["mode", "optionA", "optionB", "questions"]
-                    ),
-                    system: system,
-                    user: "Classify the dilemma and generate the 12 bypass questions as JSON.",
-                    temperature: 0.8
-                )
+                // Prompts and classification live server-side (proxy owns them).
+                let plan = try await proxy.sessionPlan(scenario: scenario)
                 let mode: AnswerMode = (plan.mode.uppercased() == "BINARY" && !plan.optionA.isEmpty && !plan.optionB.isEmpty)
                     ? .binary(plan.optionA, plan.optionB)
                     : .yesNo
                 let fallback = mode == .yesNo ? Self.fallbackBypassQuestions : Self.fallbackBinaryQuestions
                 beginSession(with: plan.questions.isEmpty ? fallback : plan.questions, mode: mode)
             } catch {
+                // Offline / rate-limited / upstream failure → local bank, never a dead end.
                 if let (a, b) = parseBinaryOptions(from: scenario) {
                     beginSession(with: Self.fallbackBinaryQuestions, mode: .binary(a, b))
                 } else {
@@ -348,15 +297,8 @@ final class SessionViewModel {
 
     // MARK: - Verdict
 
-    private struct VerdictPayload: Decodable {
-        let decision: String
-        let sentiment: String
-        let analysis: String
-        let probe: String
-    }
-
-    // Verdict content derived from the answer tally — used when there's no API key
-    // or the Gemini call fails. Returns (decision, majority choice, why, next step).
+    // Verdict content derived from the answer tally — used when the device is
+    // offline or the proxy call fails. Returns (decision, majority choice, why, next step).
     private func tallyDecision() -> (String, String, String, String) {
         let total = rapidFireAnswers.count
         let checkIn = FollowUpManager.shared.followUpsEnabled
@@ -405,48 +347,16 @@ final class SessionViewModel {
         focusScreenState = .verdict
 
         let scenario = dilemmaScenario
-        let rapidFireQA = rapidFireAnswers.enumerated()
-            .map { index, answer in
-                "\(index + 1). Q: \(answer.question) -> Response: \(answer.choice) \(answer.reflectionText.isEmpty ? "" : "(Reflection: \(answer.reflectionText))")"
-            }
-            .joined(separator: "\n")
-
-        guard let client else {
-            let (decision, majority, why, nextStep) = tallyDecision()
-            applyVerdict(
-                decision: decision,
-                majorityChoice: majority,
-                sentiment: majority == "REFLECT" ? "SPLIT" : "DECIDED",
-                analysis: why,
-                probe: nextStep,
-                logAnalysis: why
-            )
-            return
+        // Raw answers travel to the proxy; the verdict prompt lives server-side.
+        let answers = rapidFireAnswers.map {
+            ProxyAnswer(question: $0.question, choice: $0.choice, reflection: $0.reflectionText)
         }
 
         Task {
             isLoading = true
             defer { isLoading = false }
-            let rfText = rapidFireQA.isEmpty ? "None (User was silent during rapid-fire)" : rapidFireQA
-            let system = "You are an expert cognitive psychologist specializing in rapid gut-instinct bypass and final decisional resolution. "
-                + "The user has this dilemma: '\(scenario)'.\n"
-                + "During a high-pressure 60-second rapid-fire session, they gave the following reactions:\n\(rfText)\n\n"
-                + "Analyze their answers deeply. Look for inconsistencies, emotional triggers, subconscious patterns, and where their gut stance truly lies versus their rationalizations. "
-                + "Synthesize this into a final definitive verdict (The Gordian Verdict). "
-                + "Your response MUST be in JSON format with exactly four string fields:\n"
-                + "1. \"decision\": THE answer. One direct, decisive sentence answering the user's dilemma in their own terms (max 15 words). If the dilemma is a choice between two options, NAME the winner. No hedging, no mysticism. Example: 'Learn Spanish.' or 'Take the startup job.'\n"
-                + "2. \"sentiment\": A single short affective state (e.g., 'RESOLVED', 'EMERGENT CLARITY', 'DIVIDED GUTS').\n"
-                + "3. \"analysis\": 2-3 plain, concrete sentences explaining WHY that is their answer, referencing their actual rapid-fire responses. Everyday language — no jargon, no 'cognitive alignment' talk.\n"
-                + "4. \"probe\": One concrete, small first action the user should take, phrased as a direct instruction (max 15 words). Not a question.\n"
-                + "Output ONLY the JSON object. Do not include markdown or formatting."
             do {
-                let verdict = try await client.generateObject(
-                    VerdictPayload.self,
-                    fields: ["decision", "sentiment", "analysis", "probe"],
-                    system: system,
-                    user: "Synthesize a final Gordian Verdict and return JSON.",
-                    temperature: 0.8
-                )
+                let verdict = try await proxy.verdict(scenario: scenario, answers: answers)
                 let (_, majority, _, _) = tallyDecision()
                 applyVerdict(
                     decision: verdict.decision,
@@ -457,6 +367,7 @@ final class SessionViewModel {
                     logAnalysis: "\(verdict.analysis)\n\n**CONFRONTED PROBE:** \(verdict.probe)"
                 )
             } catch {
+                // Offline / limited → honest tally verdict, same as always.
                 let (decision, majority, why, nextStep) = tallyDecision()
                 applyVerdict(
                     decision: decision,
@@ -498,7 +409,7 @@ final class SessionViewModel {
         beginSession(with: Self.fallbackBypassQuestions, mode: .yesNo)
     }
 
-    // Runs the REAL generation path (Gemini if a key is stored, fallback otherwise)
+    // Runs the REAL generation path (proxy-backed AI, offline fallback otherwise)
     func startDemoLive() {
         startDilemmaSetup(scenario: "Should I move to Berlin or stay in Austin?")
     }
