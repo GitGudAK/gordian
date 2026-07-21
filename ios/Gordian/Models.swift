@@ -9,7 +9,7 @@ enum ActiveTab {
 }
 
 enum FocusScreenState {
-    case home, clarifying, activeSession, verdict
+    case home, preparing, activeSession, verdict
 }
 
 struct SimulationTopic {

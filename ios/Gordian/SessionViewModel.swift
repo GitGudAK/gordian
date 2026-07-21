@@ -99,9 +99,6 @@ final class SessionViewModel {
     // MARK: - Dilemma setup flow
 
     var dilemmaScenario = ""
-    var clarifyingQuestions: [String] = []
-    var currentClarifyingQuestionIndex = 0
-    var clarifyingAnswers: [String] = []
     var isGeneratingQuestions = false
     var rapidFireAnswers: [RapidFireAnswer] = []
     var confrontedProbe = ""
@@ -140,68 +137,9 @@ final class SessionViewModel {
 
     func startDilemmaSetup(scenario: String) {
         dilemmaScenario = scenario
-        clarifyingQuestions = []
-        currentClarifyingQuestionIndex = 0
-        clarifyingAnswers = []
         rapidFireAnswers = []
         confrontedProbe = ""
-        focusScreenState = .clarifying
-        generateClarifyingQuestions()
-    }
-
-    private func generateClarifyingQuestions() {
-        let scenario = dilemmaScenario
-        guard let client else {
-            clarifyingQuestions = [
-                "What is the single greatest risk holding you back from making this choice?",
-                "If both options cost the same and had the same social status, which would you pick?"
-            ]
-            return
-        }
-
-        Task {
-            isGeneratingQuestions = true
-            defer { isGeneratingQuestions = false }
-            let system = "You are an expert cognitive psychologist specializing in decision-making under intense pressure. "
-                + "The user has described their dilemma: '\(scenario)'. "
-                + "Assess whether you need clarifying questions to understand their scenario, emotional state, or core trade-offs better before formulating deep psychological bypass questions. "
-                + "If clarifying questions are indeed needed, generate exactly 1 or 2 short, direct, psychologically targeted clarifying questions (maximum 12 words each). "
-                + "If the scenario is already extremely clear, detailed, and specific, and no clarifying questions are needed to get to the core, return an empty JSON array: []. "
-                + "Format your response as a JSON array of strings: [\"Question 1?\", \"Question 2?\"] or []. "
-                + "Output ONLY the JSON array. No markdown, no formatting, no code blocks."
-            do {
-                let generated = try await client.generateStringArray(
-                    system: system,
-                    user: "Generate clarifying questions only if needed, otherwise empty array.",
-                    temperature: 0.7
-                )
-                if generated.isEmpty {
-                    clarifyingQuestions = []
-                    generateBypassQuestionsAndStart()
-                } else {
-                    clarifyingQuestions = generated
-                    currentClarifyingQuestionIndex = 0
-                }
-            } catch {
-                clarifyingQuestions = [
-                    "What is the single greatest risk holding you back from making this choice?",
-                    "If both options cost the same and had the same social status, which would you pick?"
-                ]
-            }
-        }
-    }
-
-    func submitClarifyingAnswer(_ answer: String) {
-        clarifyingAnswers.append(answer.isEmpty ? "Skipped" : answer)
-        let nextIndex = currentClarifyingQuestionIndex + 1
-        if nextIndex < clarifyingQuestions.count {
-            currentClarifyingQuestionIndex = nextIndex
-        } else {
-            generateBypassQuestionsAndStart()
-        }
-    }
-
-    func skipClarifications() {
+        focusScreenState = .preparing
         generateBypassQuestionsAndStart()
     }
 
@@ -217,9 +155,6 @@ final class SessionViewModel {
 
     private func generateBypassQuestionsAndStart() {
         let scenario = dilemmaScenario
-        let qaPairs = zip(clarifyingQuestions, clarifyingAnswers)
-            .map { "Q: \($0) -> A: \($1)" }
-            .joined(separator: "\n")
 
         guard let client else {
             beginSession(with: Self.fallbackBypassQuestions)
@@ -231,7 +166,6 @@ final class SessionViewModel {
             defer { isGeneratingQuestions = false }
             let system = "You are an expert cognitive psychologist specializing in rapid gut-instinct bypass. "
                 + "The user has a dilemma: '\(scenario)'.\n"
-                + "Insights gathered from clarification dialogue:\n\(qaPairs)\n"
                 + "Generate exactly 12 rapid-fire, high-intensity bypass questions (maximum 10 words each, answers should be Yes or No) "
                 + "designed to bypass the analytical brain, force an immediate gut response, and highlight subconscious desires or core fears.\n"
                 + "Format your response as a JSON array of strings: [\"Question 1?\", \"Question 2?\", ..., \"Question 12?\"] "
@@ -348,9 +282,6 @@ final class SessionViewModel {
         focusScreenState = .verdict
 
         let scenario = dilemmaScenario
-        let clarifyingQA = zip(clarifyingQuestions, clarifyingAnswers)
-            .map { "Q: \($0) -> A: \($1)" }
-            .joined(separator: "\n")
         let rapidFireQA = rapidFireAnswers.enumerated()
             .map { index, answer in
                 "\(index + 1). Q: \(answer.question) -> Response: \(answer.choice) \(answer.reflectionText.isEmpty ? "" : "(Reflection: \(answer.reflectionText))")"
@@ -374,11 +305,9 @@ final class SessionViewModel {
         Task {
             isLoading = true
             defer { isLoading = false }
-            let clarText = clarifyingQA.isEmpty ? "None (Bypassed clarifying step)" : clarifyingQA
             let rfText = rapidFireQA.isEmpty ? "None (User was silent during rapid-fire)" : rapidFireQA
             let system = "You are an expert cognitive psychologist specializing in rapid gut-instinct bypass and final decisional resolution. "
                 + "The user has this dilemma: '\(scenario)'.\n"
-                + "Dialogue where we clarified their dilemma:\n\(clarText)\n"
                 + "During a high-pressure 60-second rapid-fire session, they gave the following reactions:\n\(rfText)\n\n"
                 + "Analyze their answers deeply. Look for inconsistencies, emotional triggers, subconscious patterns, and where their gut stance truly lies versus their rationalizations. "
                 + "Synthesize this into a final definitive verdict (The Gordian Verdict). "

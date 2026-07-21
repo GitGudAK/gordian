@@ -137,8 +137,8 @@ struct FocusTabView: View {
             switch viewModel.focusScreenState {
             case .home:
                 FocusHomeView(viewModel: viewModel, speech: speech)
-            case .clarifying:
-                ClarifyingView(viewModel: viewModel, speech: speech)
+            case .preparing:
+                PreparingView(viewModel: viewModel)
             case .activeSession:
                 ActiveSessionView(viewModel: viewModel)
             case .verdict:
@@ -171,13 +171,8 @@ struct FocusTabView: View {
         }
         speech.onResult = { result in
             viewModel.setRecording(false)
-            switch viewModel.focusScreenState {
-            case .home:
+            if viewModel.focusScreenState == .home {
                 NotificationCenter.default.post(name: .speechDilemmaResult, object: result)
-            case .clarifying:
-                NotificationCenter.default.post(name: .speechClarifyingResult, object: result)
-            default:
-                viewModel.submitRapidFireAnswer(choice: "REFLECT", customText: result)
             }
         }
         speech.onError = { message in
@@ -197,5 +192,4 @@ struct FocusTabView: View {
 
 extension Notification.Name {
     static let speechDilemmaResult = Notification.Name("speechDilemmaResult")
-    static let speechClarifyingResult = Notification.Name("speechClarifyingResult")
 }
