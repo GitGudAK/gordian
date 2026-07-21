@@ -335,7 +335,7 @@ final class SessionViewModel {
             return (
                 "No answers — the knot stays tied.",
                 "REFLECT",
-                "You didn't answer any questions this round, so there's no lean to read.",
+                "You didn't answer any questions, so there is nothing to read yet.",
                 "Run it again and answer the instant each question appears — speed is the whole point."
             )
         }
@@ -350,8 +350,8 @@ final class SessionViewModel {
             return (
                 "Dead even — your gut is genuinely split.",
                 "REFLECT",
-                "You answered \(left) and \(right) equally (\(leftCount)–\(rightCount)). That's not indecision — the options really are balanced for you right now.",
-                "Sharpen the question and run it again — for example, add a deadline or a condition that would tip it."
+                "You answered \(left) and \(right) an equal number of times (\(leftCount)–\(rightCount)). Right now, neither option outweighs the other for you.",
+                "Sharpen the question and run it again — add a deadline or a condition that would tip it."
             )
         }
 
@@ -364,7 +364,7 @@ final class SessionViewModel {
         case .binary:
             decision = "Your gut picked \(winner.uppercased())."
         }
-        let why = "Under a 60-second clock you chose \(winner.uppercased()) \(winnerCount) times out of \(total). Answers that fast skip second-guessing — a lean that consistent is your actual preference."
+        let why = "You answered \(winner.uppercased()) to \(winnerCount) of the \(total) questions. Quick answers leave no time to build justifications — this pattern reflects your immediate preference."
         let nextStep = "Pick one small step toward it and do it today.\(checkIn)"
         return (decision, winner == right && answerMode == .yesNo ? "YES" : (answerMode == .yesNo ? "NO" : winner), why, nextStep)
     }
