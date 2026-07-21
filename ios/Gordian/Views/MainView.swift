@@ -100,8 +100,29 @@ struct BottomNavBar: View {
 
     var body: some View {
         HStack {
-            tabItem(.focus, label: "FOCUS", active: "bolt.fill", inactive: "bolt")
-            tabItem(.insights, label: "INSIGHTS", active: "chart.bar.fill", inactive: "chart.bar")
+            tabItem(.insights, label: "LOGS", active: "chart.bar.fill", inactive: "chart.bar")
+
+            // Big central start-session button, raised above the bar
+            Button {
+                onSelect(.focus)
+            } label: {
+                ZStack {
+                    Circle()
+                        .fill(Color.goldPrimary)
+                        .frame(width: 62, height: 62)
+                        .shadow(color: Color.goldPrimary.opacity(0.45), radius: 12, y: 2)
+                    Circle()
+                        .stroke(Color.darkBackground, lineWidth: 4)
+                        .frame(width: 62, height: 62)
+                    Image(systemName: "bolt.fill")
+                        .font(.system(size: 26, weight: .bold))
+                        .foregroundColor(.black)
+                }
+                .offset(y: -14)
+            }
+            .frame(maxWidth: .infinity)
+            .accessibilityLabel("Start session")
+
             tabItem(.calibrate, label: "GUIDES", active: "book.fill", inactive: "book")
         }
         .frame(height: 64)
