@@ -23,39 +23,30 @@ struct ActiveSessionView: View {
                             .font(.system(size: 48, weight: .bold))
                             .foregroundColor(.white)
                             .contentTransition(.numericText(countsDown: true))
-                        Text(viewModel.isTimerActive ? "SECONDS" : "TAP TO START")
+                        Text("SECONDS")
                             .font(.system(size: 10, weight: .semibold))
                             .tracking(1.5)
                             .foregroundColor(.goldPrimary)
                     }
                 }
                 .frame(width: 160, height: 160)
-                .contentShape(Circle())
-                .onTapGesture {
-                    if viewModel.isTimerActive {
-                        viewModel.pauseTimer()
-                    } else {
-                        viewModel.startTimer()
-                    }
-                }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("\(viewModel.countdownSeconds) seconds remaining")
 
                 Text("\u{201C}\(viewModel.dilemmaScenario.isEmpty ? viewModel.selectedTopic.description : viewModel.dilemmaScenario)\u{201D}")
-                    .font(.system(size: 13).italic())
+                    .font(.footnote.italic())
                     .foregroundColor(.textMuted)
                     .multilineTextAlignment(.center)
                     .lineLimit(2)
                     .padding(.horizontal, 8)
-                Text("RAPID ANSWERS: \(viewModel.rapidFireAnswers.count)")
-                    .font(.system(size: 11, weight: .bold))
-                    .tracking(1)
-                    .foregroundColor(.goldPrimary)
             }
 
-            // 2. Psychology card
+            // 2. Question card
             VStack {
-                Image(systemName: "brain")
-                    .font(.system(size: 30))
-                    .foregroundColor(.goldPrimary)
+                Text("QUESTION \(min(viewModel.rapidFireAnswers.count + 1, viewModel.activeQuestions.count)) OF \(viewModel.activeQuestions.count)")
+                    .font(.system(size: 11, weight: .semibold))
+                    .tracking(2)
+                    .foregroundColor(.textMuted)
 
                 Spacer()
 
@@ -63,7 +54,7 @@ struct ActiveSessionView: View {
                     ? viewModel.activeQuestions[viewModel.currentQuestionIndex]
                     : "Ready to test your gut?"
                 Text(question)
-                    .font(.system(size: 20, weight: .light))
+                    .font(.title3.weight(.light))
                     .foregroundColor(.white)
                     .multilineTextAlignment(.center)
                     .lineSpacing(4)
@@ -77,16 +68,6 @@ struct ActiveSessionView: View {
                     .animation(.easeInOut(duration: 0.18), value: viewModel.currentQuestionIndex)
 
                 Spacer()
-
-                // Indicator dots
-                HStack(spacing: 6) {
-                    ForEach(viewModel.activeQuestions.indices, id: \.self) { idx in
-                        Circle()
-                            .fill(idx == viewModel.currentQuestionIndex ? Color.goldPrimary : Color.white.opacity(0.2))
-                            .frame(width: idx == viewModel.currentQuestionIndex ? 8 : 6,
-                                   height: idx == viewModel.currentQuestionIndex ? 8 : 6)
-                    }
-                }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding(24)
@@ -96,57 +77,29 @@ struct ActiveSessionView: View {
 
             // 3. Bottom interaction controls (voice moves to its own experience — see spike 005/006)
             VStack(spacing: 12) {
-                // Answer buttons — NO/YES, or the dilemma's own two options
+                // Answer buttons — always two visually EQUAL options (design ticket #8:
+                // a decision instrument must not bias its own readings)
                 HStack(spacing: 16) {
-                    switch viewModel.answerMode {
-                    case .yesNo:
-                        Button {
-                            viewModel.submitRapidFireAnswer(choice: "NO")
-                        } label: {
-                            HStack(spacing: 8) {
-                                Image(systemName: "xmark")
-                                    .foregroundColor(.redAccent)
-                                Text("No")
-                                    .font(.system(size: 16, weight: .medium))
-                                    .foregroundColor(.white)
-                            }
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 56)
-                            .background(RoundedRectangle(cornerRadius: 24).fill(Color.darkSurfaceVariant))
+                    let options: [String] = {
+                        switch viewModel.answerMode {
+                        case .yesNo: return ["No", "Yes"]
+                        case .binary(let a, let b): return [a, b]
                         }
-
+                    }()
+                    ForEach(options, id: \.self) { option in
                         Button {
-                            viewModel.submitRapidFireAnswer(choice: "YES")
+                            viewModel.submitRapidFireAnswer(choice: viewModel.answerMode == .yesNo ? option.uppercased() : option)
                         } label: {
-                            HStack(spacing: 8) {
-                                Image(systemName: "checkmark")
-                                    .foregroundColor(.black)
-                                Text("Yes")
-                                    .font(.system(size: 16, weight: .bold))
-                                    .foregroundColor(.black)
-                            }
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 56)
-                            .background(RoundedRectangle(cornerRadius: 24).fill(Color.goldPrimary))
-                        }
-
-                    case .binary(let optionA, let optionB):
-                        // Equal styling on purpose — no visual bias between the two options
-                        ForEach([optionA, optionB], id: \.self) { option in
-                            Button {
-                                viewModel.submitRapidFireAnswer(choice: option)
-                            } label: {
-                                Text(option)
-                                    .font(.system(size: 16, weight: .bold))
-                                    .foregroundColor(.goldPrimary)
-                                    .lineLimit(2)
-                                    .minimumScaleFactor(0.6)
-                                    .multilineTextAlignment(.center)
-                                    .frame(maxWidth: .infinity)
-                                    .frame(height: 56)
-                                    .background(RoundedRectangle(cornerRadius: 24).fill(Color.darkSurfaceVariant))
-                                    .overlay(RoundedRectangle(cornerRadius: 24).stroke(Color.goldPrimary.opacity(0.6), lineWidth: 1.5))
-                            }
+                            Text(option)
+                                .font(.body.weight(.bold))
+                                .foregroundColor(.goldPrimary)
+                                .lineLimit(2)
+                                .minimumScaleFactor(0.6)
+                                .multilineTextAlignment(.center)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 56)
+                                .background(RoundedRectangle(cornerRadius: 24).fill(Color.darkSurfaceVariant))
+                                .overlay(RoundedRectangle(cornerRadius: 24).stroke(Color.goldPrimary.opacity(0.6), lineWidth: 1.5))
                         }
                     }
                 }
@@ -154,9 +107,8 @@ struct ActiveSessionView: View {
                 Button {
                     viewModel.resetActiveSimulation()
                 } label: {
-                    Text("ABORT SESSION")
-                        .font(.system(size: 11, weight: .bold))
-                        .tracking(2)
+                    Text("End Session")
+                        .font(.system(size: 13, weight: .medium))
                         .foregroundColor(.redAccent.opacity(0.8))
                         .frame(maxWidth: .infinity)
                         .frame(height: 44)

@@ -28,8 +28,8 @@ struct FocusHomeView: View {
                         .font(.system(size: 11, weight: .bold))
                         .tracking(2)
                         .foregroundColor(.textLight)
-                    Text("A modern Art Deco therapeutic tool. Speak or type your scenario to let the cognitive analysis engine formulate hyper-personalized bypass questions.")
-                        .font(.system(size: 12))
+                    Text("Describe what you're stuck on. Answer twelve gut questions in sixty seconds. Get a straight answer.")
+                        .font(.footnote)
                         .foregroundColor(.textMuted)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 16)
@@ -38,12 +38,12 @@ struct FocusHomeView: View {
 
                 // Scenario entry card
                 VStack(alignment: .leading, spacing: 16) {
-                    SectionLabel(text: "UNRAVEL A COGNITIVE KNOT")
+                    SectionLabel(text: "YOUR DILEMMA")
 
                     TextField(
                         "",
                         text: $textInput,
-                        prompt: Text("Type or speak your dilemma in full detail (e.g., 'Should I take the new job or stay comfortable?')...")
+                        prompt: Text("What are you wrestling with? e.g. 'Take the new job or stay?'")
                             .font(.system(size: 13))
                             .foregroundColor(.textMuted),
                         axis: .vertical
@@ -73,9 +73,10 @@ struct FocusHomeView: View {
                     } label: {
                         HStack(spacing: 8) {
                             Image(systemName: viewModel.isRecording ? "mic.slash.fill" : "mic.fill")
+                                .accessibilityHidden(true)
                                 .font(.system(size: 15))
                                 .foregroundColor(viewModel.isRecording ? .redAccent : .goldPrimary)
-                            Text(viewModel.isRecording ? "STOP SPEAKING" : "TAP TO SPEAK SCENARIO")
+                            Text(viewModel.isRecording ? "STOP SPEAKING" : "SPEAK IT INSTEAD")
                                 .font(.system(size: 11, weight: .bold))
                                 .foregroundColor(.white)
                         }
@@ -99,14 +100,13 @@ struct FocusHomeView: View {
                             .font(.system(size: 15, weight: .heavy))
                             .tracking(1)
                     }
-                    .foregroundColor(.black)
+                    .foregroundColor(textInput.isEmpty ? .textMuted : .black)
                     .frame(maxWidth: .infinity)
                     .frame(height: 56)
-                    .background(RoundedRectangle(cornerRadius: 24).fill(Color.goldPrimary))
-                    .shadow(radius: 12)
+                    .background(RoundedRectangle(cornerRadius: 24)
+                        .fill(textInput.isEmpty ? Color.darkSurfaceVariant : Color.goldPrimary))
                 }
                 .disabled(textInput.isEmpty)
-                .opacity(textInput.isEmpty ? 0.5 : 1)
             }
             .padding(.horizontal, 24)
             .padding(.top, 16)
@@ -117,6 +117,9 @@ struct FocusHomeView: View {
             if let result = note.object as? String {
                 textInput = result
             }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .focusDilemmaField)) { _ in
+            fieldFocused = true
         }
     }
 

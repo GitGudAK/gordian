@@ -8,23 +8,22 @@ struct VerdictView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
-                // Calming header
-                VStack(spacing: 8) {
+                // Calming header — sized to serve the answer, not precede it (ticket #6)
+                VStack(spacing: 6) {
                     CalmingAnimation()
                         .frame(maxWidth: .infinity)
-                        .frame(height: 220)
-                    Text("THE GORDIAN NODE UNTIED")
-                        .font(.system(size: 24, weight: .heavy))
+                        .frame(height: 140)
+                    Text("THE KNOT, UNTIED")
+                        .font(.system(size: 21, weight: .heavy))
                         .tracking(2.5)
                         .foregroundColor(.goldPrimary)
                         .multilineTextAlignment(.center)
-                    Text("BREATHE DEEPLY • COGNITIVE CLARITY RESTORED")
+                    Text("TAKE A BREATH")
                         .font(.system(size: 11, weight: .bold))
                         .tracking(1.5)
                         .foregroundColor(.textLight)
-                        .multilineTextAlignment(.center)
                 }
-                .padding(.vertical, 12)
+                .padding(.vertical, 4)
 
                 // Verdict card
                 VStack(spacing: 18) {
@@ -47,7 +46,7 @@ struct VerdictView: View {
                             VStack(spacing: 4) {
                                 SectionLabel(text: "YOUR DILEMMA", color: .textMuted, size: 10, tracking: 1)
                                 Text("\u{201C}\(viewModel.dilemmaScenario)\u{201D}")
-                                    .font(.system(size: 13).italic())
+                                    .font(.footnote.italic())
                                     .foregroundColor(.textMuted)
                                     .multilineTextAlignment(.center)
                                     .lineLimit(3)
@@ -55,7 +54,7 @@ struct VerdictView: View {
                         }
 
                         Text(viewModel.verdictDecision)
-                            .font(.system(size: 22, weight: .heavy))
+                            .font(.title2.weight(.heavy))
                             .foregroundColor(.goldPrimary)
                             .multilineTextAlignment(.center)
                             .fixedSize(horizontal: false, vertical: true)
@@ -70,7 +69,7 @@ struct VerdictView: View {
                                 SectionLabel(text: "WHY", size: 10, tracking: 1)
                             }
                             Text(viewModel.aiReflection)
-                                .font(.system(size: 13))
+                                .font(.footnote)
                                 .lineSpacing(5)
                                 .foregroundColor(.textLight)
                         }
@@ -82,7 +81,7 @@ struct VerdictView: View {
                             VStack(alignment: .leading, spacing: 4) {
                                 SectionLabel(text: "NEXT STEP", size: 10, tracking: 1)
                                 Text(viewModel.confrontedProbe)
-                                    .font(.system(size: 14, weight: .semibold))
+                                    .font(.subheadline.weight(.semibold))
                                     .foregroundColor(.white)
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -98,8 +97,9 @@ struct VerdictView: View {
                             viewModel.resetActiveSimulation()
                         } label: {
                             HStack(spacing: 8) {
-                                Text("COMPLETE & RETURN HOME")
+                                Text("DONE")
                                     .font(.system(size: 14, weight: .bold))
+                                    .tracking(1)
                                 Image(systemName: "checkmark.circle.fill")
                                     .font(.system(size: 14))
                             }
@@ -116,7 +116,7 @@ struct VerdictView: View {
                                 Image(systemName: "chart.bar.fill")
                                     .font(.system(size: 14))
                                     .foregroundColor(.goldPrimary)
-                                Text("VIEW IN CHRONOLOGY LOG")
+                                Text("VIEW IN LOGS")
                                     .font(.system(size: 14, weight: .bold))
                                     .foregroundColor(.white)
                             }
