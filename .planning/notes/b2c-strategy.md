@@ -6,6 +6,15 @@ context: User direction: "I have a Gemini API key ready. I need to use this in t
 
 # Gordian B2C Strategy
 
+> **SUPERSEDED IN PART (2026-07-21, user decision):** Gordian is a PAID app
+> (one-time App Store purchase). There is NO freemium tier, NO weekly AI-session
+> meter, and NO subscription. Every session is AI-driven for every buyer; that is
+> the product. The freemium/metering sections below are retained for history
+> only. Coupon needs are covered by App Store promo codes for paid apps
+> (100 per version, free-download grants for press/friends). The proxy's weekly
+> session counter remains as anonymous usage telemetry only;
+> `weekly_meter_exhausted` stays permanently dormant.
+
 ## Key architecture (non-negotiable)
 The operator's Gemini key lives ONLY server-side in the Phase 1 proxy (Cloudflare Worker-class host, free tier). Never embedded in the app binary (extractable → bill abuse). Proxy owns prompts + model choice → post-launch iteration without app releases. Per-device rate limits + hard daily spend cap from day one; App Attest hardening can follow launch.
 

@@ -26,7 +26,8 @@
 
 ## Open items (2026-07-21)
 
-- AI-ALWAYS DECISION (user, 2026-07-21): no pre-canned questions ever; proxy retries a fallback model; app shows retry UI instead of the bank. CONSEQUENCE for Phase 3.5: the "unlimited offline sessions" free-tier leg no longer exists — freemium design needs a revisit (what does a free user get after the weekly AI meter is exhausted?).
+- AI-ALWAYS DECISION (user, 2026-07-21): no pre-canned questions ever; proxy retries a fallback model; app shows retry UI instead of the bank.
+- BUSINESS MODEL DECISION (user, 2026-07-21): PAID APP, one-time purchase. No freemium, no weekly meter, no subscription. Resolves the AI-always tension cleanly. Proxy weekly counter = telemetry only; weekly_meter_exhausted permanently dormant. Phase 3.5 rescoped to paid-app setup + promo codes.
 - Safety lockout shipped: client keyword screen + server SENSITIVE gate → 5-minute lockout with 988 resources. Consider expanding the keyword list and localizing crisis resources before launch.
 
 ## Older open items (2026-07-20)

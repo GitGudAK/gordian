@@ -25,10 +25,10 @@
 **Requirements:** REQ-001, REQ-002, REQ-003, REQ-006
 **Depends on:** Phase 1, Phase 2
 
-### Phase 3.5: Monetization
+### Phase 3.5: Paid-App Setup (was: Monetization — superseded 2026-07-21)
 **Status:** Pending
-**Goal:** Honest freemium: unlimited offline sessions free, 3 AI sessions/week metered, Gordian Plus (monthly/annual subscription + lifetime non-consumable via StoreKit 2) unlocks unlimited AI. Coupon infrastructure: subscription Offer Codes (3-months-free grants) and promo codes for lifetime — Apple-native, no custom redemption backend. Settings gains a "Redeem a code" row. Paywall never dead-ends a session.
-**Requirements:** REQ-006 (never dead-end) + `.planning/notes/b2c-strategy.md` (products, coupon design)
+**Goal:** Gordian ships as a PAID app (one-time purchase, price TBD ~$4.99-9.99). No freemium, no meter, no subscription: every buyer gets unlimited AI sessions. Work: App Store paid-app configuration, price point decision, promo codes for press/friends (100/version, free-download grants). No StoreKit code needed in-app.
+**Requirements:** `.planning/notes/b2c-strategy.md` (superseding note)
 **Depends on:** Phase 3
 
 ### Phase 4: Native Polish Pass
