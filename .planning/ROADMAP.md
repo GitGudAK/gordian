@@ -6,7 +6,7 @@
 ## Phases
 
 ### Phase 1: Backend Gemini Proxy
-**Status:** Pending
+**Status:** Complete (2026-07-21) — live at `https://gordian-proxy.gordian-app.workers.dev`
 **Goal:** A small deployed service that holds the single Gemini API key and serves the app's two structured-output operations (session-plan generation and verdict synthesis — the clarifying-questions step was removed from the app) to anonymous devices — so users get AI with zero setup and the key never ships in the app. Launch lane: opaque device ID + strict limits; App Attest hardening deferred.
 **Requirements:** REQ-001, REQ-002, REQ-005, REQ-006 (server side)
 **Depends on:** —

@@ -6,7 +6,7 @@
 ## Position
 
 - Milestone: v1 — iOS app on the App Store
-- Current phase: 1 (Backend Gemini Proxy) — BUILT & OFFLINE-VERIFIED (36/36 tests, dry-run deploy OK, wrangler-dev HTTP simulation green). Awaiting ~5 min of operator steps to go live: `wrangler login`, fresh GEMINI_API_KEY via `wrangler secret put`, `wrangler deploy` + live smoke — runbook in `.planning/phases/01-backend-gemini-proxy/01-03-SUMMARY.md`.
+- Current phase: 1 COMPLETE (2026-07-21) — proxy LIVE at `https://gordian-proxy.gordian-app.workers.dev` with fresh key; both operations smoke-tested against real Gemini; error contract verified on production. Next: Phase 3 (app→proxy integration, remove BYO-key) — Phase 2's bring-up goal is already de facto met.
 - iOS port: BUILDS AND RUNS — Xcode 16.4 installed 2026-07-20 (Intel Mac → xcodes+aria2 route; App Store Xcode is Apple-Silicon-only). First build: zero errors. Running on iPhone 16 Pro simulator (iOS 18.6). Phase 2 (first build & bring-up) effectively underway.
 
 ## Decisions (locked)
