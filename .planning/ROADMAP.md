@@ -36,3 +36,8 @@
 **Goal:** Submission-ready build: app icon, privacy nutrition labels consistent with local-only history, mic/speech usage strings verified, AI-content policy compliance, screenshots, TestFlight-to-release pipeline.
 **Requirements:** REQ-003, REQ-007
 **Depends on:** Phase 3, Phase 4
+
+## v2 (deferred)
+
+- **Voice session mode** — conversational spoken sessions with a calming voice (seed: `.planning/seeds/voice-session-mode.md`, spike plan pre-scoped). Deferred 2026-07-20.
+- **Re-engagement layer** — haptics/sound, widgets, Siri intents, Live Activity (seed: `.planning/seeds/re-engagement-layer.md`).
