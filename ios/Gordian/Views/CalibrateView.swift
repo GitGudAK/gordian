@@ -23,7 +23,14 @@ struct CalibrateView: View {
             .padding(.bottom, 24)
         }
         .scrollDismissesKeyboard(.interactively)
-        .onAppear { userApiKey = viewModel.savedApiKey }
+        .onAppear {
+            userApiKey = viewModel.savedApiKey
+            #if DEBUG
+            if ProcessInfo.processInfo.arguments.contains("-demoGuide") {
+                expandedGuide = DecisionGuide.all[0]
+            }
+            #endif
+        }
         .animation(.easeInOut(duration: 0.2), value: expandedGuide?.id)
     }
 

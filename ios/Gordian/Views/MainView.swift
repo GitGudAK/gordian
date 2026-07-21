@@ -42,6 +42,10 @@ struct MainView: View {
                 viewModel.startDemoBinary()
             } else if ProcessInfo.processInfo.arguments.contains("-demoVerdict") {
                 viewModel.startDemoVerdict()
+            } else if ProcessInfo.processInfo.arguments.contains("-tabLogs") {
+                viewModel.activeTab = .insights
+            } else if ProcessInfo.processInfo.arguments.contains("-tabGuides") {
+                viewModel.activeTab = .calibrate
             }
             #endif
         }
