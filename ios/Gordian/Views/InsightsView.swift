@@ -1,4 +1,6 @@
-// INSIGHTS tab — port of InsightsTabScreen (gut analytics + decision chronology)
+// LOGS tab — history + stats. Redesigned per design tickets #9/#10/#11:
+// honest stats (no legendless chart), question-first cards with the decision line,
+// analysis behind a tap, native swipe-to-delete.
 
 import SwiftUI
 import SwiftData
@@ -15,12 +17,12 @@ struct InsightsView: View {
                     .font(.system(size: 60))
                     .foregroundColor(.textMuted.opacity(0.5))
                 Spacer().frame(height: 16)
-                Text("No decisions logged yet.")
+                Text("No sessions yet.")
                     .font(.system(size: 16, weight: .medium))
                     .foregroundColor(.white)
                 Spacer().frame(height: 8)
-                Text("Run a 60-second Gordian decision-making simulation to populate insights and bypass cognitive overload.")
-                    .font(.system(size: 12))
+                Text("Run a 60-second session and your decisions will collect here.")
+                    .font(.footnote)
                     .foregroundColor(.textMuted)
                     .multilineTextAlignment(.center)
                 Spacer()
@@ -28,145 +30,128 @@ struct InsightsView: View {
             .padding(24)
         } else {
             let total = decisions.count
-            let yesCount = decisions.filter { $0.choice == "YES" }.count
-            let noCount = decisions.filter { $0.choice == "NO" }.count
-            let reflectCount = decisions.filter { $0.choice == "REFLECT" }.count
-            let topSentiment = Dictionary(grouping: decisions, by: \.sentiment)
-                .max { $0.value.count < $1.value.count }?.key ?? "UNSURE"
+            let split = decisions.filter { $0.choice == "REFLECT" }.count
+            let decided = total - split
 
-            ScrollView {
-                VStack(spacing: 16) {
-                    // Stats card
-                    VStack(alignment: .leading, spacing: 12) {
-                        SectionLabel(text: "GUT ANALYTICS", tracking: 1)
-
-                        HStack {
-                            VStack(alignment: .leading, spacing: 0) {
-                                Text("Total Runs")
-                                    .font(.system(size: 11))
-                                    .foregroundColor(.textMuted)
-                                Text("\(total)")
-                                    .font(.system(size: 24, weight: .bold))
-                                    .foregroundColor(.white)
-                            }
-                            Spacer()
-                            VStack(alignment: .leading, spacing: 0) {
-                                Text("Yes / No Split")
-                                    .font(.system(size: 11))
-                                    .foregroundColor(.textMuted)
-                                Text("\(yesCount) / \(noCount)")
-                                    .font(.system(size: 24, weight: .bold))
-                                    .foregroundColor(.white)
-                            }
-                            Spacer()
-                            VStack(alignment: .leading, spacing: 0) {
-                                Text("Dominant Gut State")
-                                    .font(.system(size: 11))
-                                    .foregroundColor(.textMuted)
-                                Text(topSentiment)
-                                    .font(.system(size: 20, weight: .bold))
-                                    .foregroundColor(.goldPrimary)
-                                    .lineLimit(1)
-                                    .minimumScaleFactor(0.6)
-                            }
-                        }
-
-                        // Distribution bar
-                        GeometryReader { geo in
-                            HStack(spacing: 0) {
-                                Rectangle().fill(Color.goldPrimary)
-                                    .frame(width: geo.size.width * CGFloat(yesCount) / CGFloat(total))
-                                Rectangle().fill(Color.redAccent)
-                                    .frame(width: geo.size.width * CGFloat(noCount) / CGFloat(total))
-                                Rectangle().fill(Color.white.opacity(0.3))
-                                    .frame(width: geo.size.width * CGFloat(reflectCount) / CGFloat(total))
-                                Rectangle().fill(Color.darkSurfaceVariant)
-                            }
-                        }
-                        .frame(height: 8)
-                        .clipShape(Capsule())
+            List {
+                Section {
+                    HStack {
+                        statColumn("Sessions", "\(total)", .white)
+                        Spacer()
+                        statColumn("Decided", "\(decided)", .goldPrimary)
+                        Spacer()
+                        statColumn("Split", "\(split)", .textMuted)
                     }
                     .padding(20)
                     .gordianCard()
-
-                    SectionLabel(text: "DECISION CHRONOLOGY", color: .textMuted, tracking: 1)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-
-                    ForEach(decisions) { decision in
-                        DecisionCard(decision: decision) {
-                            viewModel.deleteDecision(decision)
-                        }
-                    }
+                    .listRowStyleGordian()
+                } header: {
+                    SectionLabel(text: "STATS", tracking: 1)
+                        .padding(.leading, 24)
                 }
-                .padding(.horizontal, 24)
-                .padding(.bottom, 24)
+
+                Section {
+                    ForEach(decisions) { decision in
+                        DecisionCard(decision: decision)
+                            .listRowStyleGordian()
+                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                Button(role: .destructive) {
+                                    viewModel.deleteDecision(decision)
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                            }
+                    }
+                } header: {
+                    SectionLabel(text: "HISTORY", color: .textMuted, tracking: 1)
+                        .padding(.leading, 24)
+                }
             }
+            .listStyle(.plain)
+            .scrollContentBackground(.hidden)
+            .background(Color.darkBackground)
         }
+    }
+
+    private func statColumn(_ label: String, _ value: String, _ color: Color) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text(label)
+                .font(.caption)
+                .foregroundColor(.textMuted)
+            Text(value)
+                .font(.system(size: 24, weight: .bold))
+                .foregroundColor(color)
+        }
+    }
+}
+
+private extension View {
+    func listRowStyleGordian() -> some View {
+        self
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+            .listRowInsets(EdgeInsets(top: 6, leading: 24, bottom: 6, trailing: 24))
     }
 }
 
 struct DecisionCard: View {
     let decision: DecisionLog
-    let onDelete: () -> Void
+    @State private var expanded = false
 
-    private var choiceColor: Color {
-        switch decision.choice {
-        case "YES": return .goldPrimary
-        case "NO": return .redAccent
-        default: return .white
-        }
+    private var outcomeLabel: String {
+        decision.choice == "REFLECT" ? "SPLIT" : decision.choice.uppercased()
+    }
+
+    private var outcomeColor: Color {
+        decision.choice == "REFLECT" ? .textMuted : .goldPrimary
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                VStack(alignment: .leading, spacing: 0) {
-                    SectionLabel(text: decision.simulationTitle.uppercased(), size: 10, tracking: 1)
-                    Text(decision.timestamp.formatted(.dateTime.month(.abbreviated).day().hour(.defaultDigits(amPM: .abbreviated)).minute()))
-                        .font(.system(size: 10))
-                        .foregroundColor(.textMuted)
-                }
-
+            HStack(alignment: .top) {
+                Text("\u{201C}\(decision.question)\u{201D}")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundColor(.white)
+                    .lineLimit(3)
                 Spacer()
-
-                Text(decision.choice)
+                Text(outcomeLabel)
                     .font(.system(size: 11, weight: .bold))
-                    .foregroundColor(choiceColor)
+                    .foregroundColor(outcomeColor)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
-                    .background(RoundedRectangle(cornerRadius: 8)
-                        .fill(decision.choice == "REFLECT" ? Color.white.opacity(0.1) : choiceColor.opacity(0.15)))
-
-                Button(action: onDelete) {
-                    Image(systemName: "trash")
-                        .font(.system(size: 13))
-                        .foregroundColor(.textMuted)
-                }
+                    .background(RoundedRectangle(cornerRadius: 8).fill(outcomeColor.opacity(0.15)))
             }
 
-            Text("\u{201C}\(decision.question)\u{201D}")
-                .font(.system(size: 13, weight: .medium))
-                .foregroundColor(.white)
-
-            if !decision.reflection.isEmpty && decision.reflection != "None" {
-                Text("Reflected: \(decision.reflection)")
-                    .font(.system(size: 11).italic())
-                    .foregroundColor(.textLight)
-            }
-
-            Divider().background(Color.white.opacity(0.05))
-
-            HStack(alignment: .top, spacing: 6) {
-                Image(systemName: "brain.head.profile")
-                    .font(.system(size: 13))
+            if !decision.displayDecision.isEmpty {
+                Text(decision.displayDecision)
+                    .font(.footnote.weight(.bold))
                     .foregroundColor(.goldPrimary)
-                Text(decision.aiAnalysis)
-                    .font(.system(size: 11))
+            }
+
+            HStack {
+                Text(decision.timestamp.formatted(.dateTime.month(.abbreviated).day().hour(.defaultDigits(amPM: .abbreviated)).minute()))
+                Text("·")
+                Text(decision.reflection)
+                Spacer()
+                Image(systemName: expanded ? "chevron.up" : "chevron.down")
+            }
+            .font(.caption)
+            .foregroundColor(.textMuted)
+
+            if expanded {
+                Divider().background(Color.white.opacity(0.05))
+                Text(decision.displayAnalysis)
+                    .font(.footnote)
                     .lineSpacing(3)
                     .foregroundColor(.textMuted)
             }
         }
         .padding(16)
         .gordianCard(cornerRadius: 20)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            withAnimation(.easeInOut(duration: 0.2)) { expanded.toggle() }
+        }
+        .accessibilityLabel("Session: \(decision.question). Outcome: \(outcomeLabel).")
     }
 }

@@ -438,8 +438,9 @@ final class SessionViewModel {
             question: dilemmaScenario.isEmpty ? "Gordian Knot Untied" : dilemmaScenario,
             choice: majorityChoice,
             sentiment: sentiment,
-            reflection: "Completed 60s session with \(rapidFireAnswers.count) responses.",
-            aiAnalysis: "DECISION: \(decision)\n\n\(logAnalysis)"
+            reflection: "\(rapidFireAnswers.count) answers",
+            aiAnalysis: logAnalysis,
+            decision: decision
         ))
     }
 

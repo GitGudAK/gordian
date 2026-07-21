@@ -5,6 +5,7 @@ import SwiftData
 
 struct MainView: View {
     @State private var viewModel = SessionViewModel()
+    @State private var showSettings = false
     @Environment(\.modelContext) private var modelContext
 
     var body: some View {
@@ -12,7 +13,7 @@ struct MainView: View {
             Color.darkBackground.ignoresSafeArea()
 
             VStack(spacing: 0) {
-                HeaderView(viewModel: viewModel)
+                HeaderView(viewModel: viewModel, showSettings: $showSettings)
 
                 Group {
                     switch viewModel.activeTab {
@@ -23,7 +24,14 @@ struct MainView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-                BottomNavBar(activeTab: viewModel.activeTab) { viewModel.activeTab = $0 }
+                BottomNavBar(activeTab: viewModel.activeTab) { tab in
+                    // Already on the home screen? The bolt focuses the dilemma field
+                    // instead of doing nothing (one primary action, ticket #2)
+                    if tab == .focus, viewModel.activeTab == .focus, viewModel.focusScreenState == .home {
+                        NotificationCenter.default.post(name: .focusDilemmaField, object: nil)
+                    }
+                    viewModel.activeTab = tab
+                }
             }
 
             if viewModel.isLoading {
@@ -32,6 +40,10 @@ struct MainView: View {
                     .controlSize(.large)
                     .tint(.goldPrimary)
             }
+        }
+        .sheet(isPresented: $showSettings) {
+            SettingsView(viewModel: viewModel)
+                .preferredColorScheme(.dark)
         }
         .onAppear {
             viewModel.modelContext = modelContext
@@ -54,47 +66,45 @@ struct MainView: View {
 
 struct HeaderView: View {
     var viewModel: SessionViewModel
+    @Binding var showSettings: Bool
+
+    // The home screen carries the brand in its hero — showing it here too says it twice (ticket #12)
+    private var showBrand: Bool {
+        !(viewModel.activeTab == .focus && viewModel.focusScreenState == .home)
+    }
 
     var body: some View {
         HStack {
-            HStack(spacing: 12) {
-                Image("KnotLogo")
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: 36, height: 36)
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.white.opacity(0.1), lineWidth: 1))
-                    .shadow(radius: 8)
-                Text("Gordian")
-                    .font(.system(size: 20, weight: .medium))
-                    .tracking(-0.5)
-                    .foregroundColor(.white)
+            if showBrand {
+                HStack(spacing: 12) {
+                    Image("KnotLogo")
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 36, height: 36)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.white.opacity(0.1), lineWidth: 1))
+                    Text("Gordian")
+                        .font(.system(size: 20, weight: .medium))
+                        .tracking(-0.5)
+                        .foregroundColor(.white)
+                }
             }
 
             Spacer()
 
-            if viewModel.activeTab == .focus {
-                headerButton(systemImage: "clock.arrow.circlepath") {
-                    viewModel.activeTab = .insights
-                }
-            } else if viewModel.activeTab == .insights {
-                headerButton(systemImage: "bolt") {
-                    viewModel.activeTab = .focus
-                }
+            Button {
+                showSettings = true
+            } label: {
+                Image(systemName: "gearshape")
+                    .font(.system(size: 17))
+                    .foregroundColor(.textMuted)
+                    .frame(width: 40, height: 40)
+                    .background(Circle().fill(Color.darkSurfaceVariant))
             }
+            .accessibilityLabel("Settings")
         }
         .padding(.horizontal, 24)
-        .padding(.vertical, 16)
-    }
-
-    private func headerButton(systemImage: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: systemImage)
-                .font(.system(size: 17))
-                .foregroundColor(.goldPrimary)
-                .frame(width: 40, height: 40)
-                .background(Circle().fill(Color.darkSurfaceVariant))
-        }
+        .padding(.vertical, 12)
     }
 }
 
@@ -219,4 +229,5 @@ struct FocusTabView: View {
 
 extension Notification.Name {
     static let speechDilemmaResult = Notification.Name("speechDilemmaResult")
+    static let focusDilemmaField = Notification.Name("focusDilemmaField")
 }

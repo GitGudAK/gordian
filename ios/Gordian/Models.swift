@@ -53,17 +53,35 @@ final class DecisionLog {
     var sentiment: String
     var reflection: String
     var aiAnalysis: String
+    var decision: String = ""
     var timestamp: Date
 
     init(simulationTitle: String, question: String, choice: String, sentiment: String,
-         reflection: String, aiAnalysis: String, timestamp: Date = Date()) {
+         reflection: String, aiAnalysis: String, decision: String = "", timestamp: Date = Date()) {
         self.simulationTitle = simulationTitle
         self.question = question
         self.choice = choice
         self.sentiment = sentiment
         self.reflection = reflection
         self.aiAnalysis = aiAnalysis
+        self.decision = decision
         self.timestamp = timestamp
+    }
+
+    // Older records stored the decision as a "DECISION: ..." prefix inside aiAnalysis
+    var displayDecision: String {
+        if !decision.isEmpty { return decision }
+        if aiAnalysis.hasPrefix("DECISION: "), let firstLine = aiAnalysis.split(separator: "\n").first {
+            return String(firstLine.dropFirst("DECISION: ".count))
+        }
+        return ""
+    }
+
+    var displayAnalysis: String {
+        guard decision.isEmpty, aiAnalysis.hasPrefix("DECISION: ") else { return aiAnalysis }
+        return aiAnalysis.split(separator: "\n", omittingEmptySubsequences: true)
+            .dropFirst()
+            .joined(separator: "\n")
     }
 }
 

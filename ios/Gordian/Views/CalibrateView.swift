@@ -5,10 +5,6 @@ import SwiftUI
 struct CalibrateView: View {
     var viewModel: SessionViewModel
     @State private var expandedGuide: DecisionGuide?
-    @State private var userApiKey = ""
-    @State private var showPurgeConfirm = false
-    @State private var purgeConfirmed = false
-    @FocusState private var keyFieldFocused: Bool
 
     var body: some View {
         ScrollView {
@@ -22,9 +18,7 @@ struct CalibrateView: View {
             .padding(.horizontal, 24)
             .padding(.bottom, 24)
         }
-        .scrollDismissesKeyboard(.interactively)
         .onAppear {
-            userApiKey = viewModel.savedApiKey
             #if DEBUG
             if ProcessInfo.processInfo.arguments.contains("-demoGuide") {
                 expandedGuide = DecisionGuide.all[0]
@@ -82,56 +76,6 @@ struct CalibrateView: View {
                 }
             }
 
-            // API configuration
-            VStack(alignment: .leading, spacing: 12) {
-                SectionLabel(text: "DEEP COGNITIVE CALIBRATION", tracking: 1)
-                Text("Enter your Cognitive API key to unlock real-time, deep psychological analysis and personalized diagnostic breakthroughs.")
-                    .font(.system(size: 11))
-                    .foregroundColor(.textMuted)
-
-                SecureField(
-                    "",
-                    text: $userApiKey,
-                    prompt: Text("Enter API Key").font(.system(size: 12)).foregroundColor(.textMuted)
-                )
-                .focused($keyFieldFocused)
-                .autocorrectionDisabled()
-                .textInputAutocapitalization(.never)
-                .modifier(GordianFieldStyle(focused: keyFieldFocused))
-                .onChange(of: userApiKey) { _, newValue in
-                    viewModel.saveApiKey(newValue)
-                }
-
-                Text("Note: If left empty, the app will fall back to local rule-based psychology models, keeping you fully functional.")
-                    .font(.system(size: 10).italic())
-                    .foregroundColor(.textMuted)
-            }
-            .padding(16)
-            .gordianCard(cornerRadius: 16)
-
-            // Purge history
-            Button {
-                showPurgeConfirm = true
-            } label: {
-                Text(purgeConfirmed ? "Log history successfully cleared." : "Purge Log History")
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundColor(.redAccent)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 44)
-                    .background(RoundedRectangle(cornerRadius: 12).fill(Color.redAccent.opacity(0.15)))
-            }
-            .padding(.top, 10)
-            .confirmationDialog("Purge all decision history?", isPresented: $showPurgeConfirm, titleVisibility: .visible) {
-                Button("Purge Everything", role: .destructive) {
-                    viewModel.clearHistory()
-                    purgeConfirmed = true
-                    Task {
-                        try? await Task.sleep(for: .seconds(2))
-                        purgeConfirmed = false
-                    }
-                }
-                Button("Cancel", role: .cancel) {}
-            }
         }
     }
 
@@ -158,20 +102,14 @@ struct CalibrateView: View {
                 Text(guide.title)
                     .font(.system(size: 26, weight: .heavy))
                     .foregroundColor(.white)
-                HStack(spacing: 12) {
-                    Text(guide.readTime)
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundColor(.textMuted)
-                    Circle().fill(Color.textMuted).frame(width: 4, height: 4)
-                    Text("Curated Blog View")
-                        .font(.system(size: 11))
-                        .foregroundColor(.textMuted)
-                }
+                Text(guide.readTime)
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundColor(.textMuted)
             }
 
             VStack(alignment: .leading, spacing: 16) {
                 Text(guide.fullContent)
-                    .font(.system(size: 14))
+                    .font(.subheadline)
                     .lineSpacing(6)
                     .foregroundColor(.textLight)
 
@@ -194,7 +132,7 @@ struct CalibrateView: View {
             Button {
                 expandedGuide = nil
             } label: {
-                Text("FINISH READING")
+                Text("DONE")
                     .font(.system(size: 14, weight: .heavy))
                     .foregroundColor(.black)
                     .frame(maxWidth: .infinity)
