@@ -27,7 +27,7 @@ struct FocusHomeView: View {
                         .font(.system(size: 11, weight: .bold))
                         .tracking(2)
                         .foregroundColor(.textLight)
-                    Text("Describe what you're stuck on. Answer quick gut questions against a sixty-second clock. Get a straight answer.")
+                    Text("A sixty-second self-reflection exercise that helps you reach your own decision faster.")
                         .font(.footnote)
                         .foregroundColor(.textMuted)
                         .multilineTextAlignment(.center)
