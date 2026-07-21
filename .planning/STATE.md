@@ -24,6 +24,15 @@
 - Spike findings skill: `.claude/skills/spike-findings-gordian/`
 - Open research: `.planning/research/questions.md` (proxy abuse protection)
 
+## Open items (2026-07-20 end of session)
+
+- Notification permission on simulator stuck denied — flip in sim Settings app (keeps logs) or reinstall app (wipes logs) to live-test follow-ups/Daily Knot/Weekly Recap.
+- "Not-a-decision" input handling designed, not built: classification gains NOT_A_DECISION (+reframe suggestion) and SENSITIVE (crisis resources, never gamified) modes; offline heuristic; bounce UI on preparing screen.
+- Design tickets #12 (clean knot asset re-export, radius unification) and #13 (VoiceOver pass, symbol weights) partially open; #1–#11 closed.
+- Phase 1 backend proxy: build model-agnostic; bake-off Gemini flash vs Claude Haiku 4.5 (hybrid option: Haiku questions + Sonnet verdict). Also serves guides.json later.
+- Rotate the spike-era Gemini API key before any release.
+- Spike verifications still open: 003 speech+RMS `full` run, 004 session feel check (now moot-ish — real app runs).
+
 ## History
 
-- 2026-07-20 — Spikes 001–004 run and wrapped; iOS port written; repo created (GitGudAK/gordian); Android Gemini bug-fix task spawned (separate session).
+- 2026-07-20 — Spikes 001–004 run and wrapped; iOS port written; repo created (GitGudAK/gordian); Android Gemini bug-fix task spawned (separate session). Same day: Xcode 16.4 installed (Intel route), first build succeeded, app running in Simulator; design review shipped 11/13 tickets; verdict/copy simplification; decision follow-up loop + Daily Knot + Weekly Recap built; knot glyph replaced bolt.
