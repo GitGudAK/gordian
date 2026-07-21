@@ -60,54 +60,14 @@ struct VerdictView: View {
                             .multilineTextAlignment(.center)
                             .fixedSize(horizontal: false, vertical: true)
 
-                        // Diagnostic pills
-                        HStack(spacing: 10) {
-                            VStack(spacing: 2) {
-                                Text("AFFECTIVE RESPONSE")
-                                    .font(.system(size: 9, weight: .bold))
-                                    .foregroundColor(.textMuted)
-                                Text(viewModel.sentimentLabel)
-                                    .font(.system(size: 14, weight: .heavy))
-                                    .foregroundColor(.goldPrimary)
-                                    .multilineTextAlignment(.center)
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding(12)
-                            .background(RoundedRectangle(cornerRadius: 12).fill(Color.goldPrimary.opacity(0.12)))
-                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.goldPrimary.opacity(0.5), lineWidth: 1))
-
-                            VStack(spacing: 2) {
-                                Text("SENSE OF RELEASE")
-                                    .font(.system(size: 9, weight: .bold))
-                                    .foregroundColor(.textMuted)
-                                Text("CALM / FREE")
-                                    .font(.system(size: 14, weight: .heavy))
-                                    .foregroundColor(.white)
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding(12)
-                            .background(RoundedRectangle(cornerRadius: 12).fill(Color.darkSurfaceVariant))
-                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.white.opacity(0.05), lineWidth: 1))
-                        }
-
                         Divider().background(Color.white.opacity(0.05))
-
-                        if !viewModel.confrontedProbe.isEmpty {
-                            VStack(alignment: .leading, spacing: 4) {
-                                SectionLabel(text: "FINAL ALIGNING PROBE", size: 10, tracking: 1)
-                                Text("\u{201C}\(viewModel.confrontedProbe)\u{201D}")
-                                    .font(.system(size: 15, weight: .bold).italic())
-                                    .foregroundColor(.white)
-                            }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                        }
 
                         VStack(alignment: .leading, spacing: 6) {
                             HStack(spacing: 6) {
                                 Image(systemName: "leaf.fill")
                                     .font(.system(size: 13))
                                     .foregroundColor(.goldPrimary)
-                                SectionLabel(text: "GUT-LEVEL ALIGNMENT & REFLECTION", size: 10, tracking: 1)
+                                SectionLabel(text: "WHY", size: 10, tracking: 1)
                             }
                             Text(viewModel.aiReflection)
                                 .font(.system(size: 13))
@@ -117,6 +77,16 @@ struct VerdictView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(16)
                         .background(RoundedRectangle(cornerRadius: 16).fill(Color.darkSurfaceVariant.opacity(0.3)))
+
+                        if !viewModel.confrontedProbe.isEmpty {
+                            VStack(alignment: .leading, spacing: 4) {
+                                SectionLabel(text: "NEXT STEP", size: 10, tracking: 1)
+                                Text(viewModel.confrontedProbe)
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundColor(.white)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        }
                     }
                 }
                 .padding(24)
