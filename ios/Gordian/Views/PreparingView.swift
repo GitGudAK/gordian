@@ -66,7 +66,7 @@ struct PreparingView: View {
                     ProgressView()
                         .controlSize(.large)
                         .tint(.goldPrimary)
-                    Text("Formulating 12 rapid-fire questions for your gut. The 60-second clock starts the moment they're ready.")
+                    Text("Writing rapid-fire questions for your gut. The 60-second clock starts the moment they're ready.")
                         .font(.system(size: 11))
                         .foregroundColor(.textMuted)
                         .multilineTextAlignment(.center)
