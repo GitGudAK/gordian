@@ -24,7 +24,9 @@ struct CalmingAnimation: View {
     @State private var startDate = Date()
 
     var body: some View {
-        TimelineView(.animation) { timeline in
+        // 30fps cap: the slowest element is a 4s breath; full display refresh
+        // (up to 120Hz) doubles-to-quadruples GPU/CPU cost for no visible gain
+        TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { timeline in
             let t = timeline.date.timeIntervalSince(startDate)
             // Breathing: 4s up, 4s down (matches the Android reversed 4000ms tween)
             let breathePhase = (sin(t * .pi / 4 - .pi / 2) + 1) / 2
