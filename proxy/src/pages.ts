@@ -73,7 +73,6 @@ function page(title: string, body: string, footer = ""): Response {
 <body>
 <header><img src="data:image/png;base64,${LOGO_B64}" alt="Gordian knot mark"><span class="word">GORDIAN</span></header>
 <h1>${title}</h1>${body}${footer}
-<p class="muted" style="margin-top:32px">Gordian, a self-reflection exercise for faster decisions.</p>
 </body></html>`;
   return new Response(html, { headers: { "content-type": "text/html; charset=utf-8" } });
 }
