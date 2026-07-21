@@ -30,18 +30,51 @@ struct PreparingView: View {
                     .padding(.horizontal, 24)
             }
 
-            VStack(spacing: 16) {
-                ProgressView()
-                    .controlSize(.large)
-                    .tint(.goldPrimary)
-                Text("Formulating 12 rapid-fire questions for your gut. The 60-second clock starts the moment they're ready.")
-                    .font(.system(size: 11))
-                    .foregroundColor(.textMuted)
-                    .multilineTextAlignment(.center)
+            if viewModel.preparingFailed {
+                VStack(spacing: 16) {
+                    Image(systemName: "wifi.slash")
+                        .font(.system(size: 22))
+                        .foregroundColor(.textMuted)
+                    Text("Couldn't reach Gordian. Your questions are written for your exact dilemma, so a connection is needed to start.")
+                        .font(.system(size: 12))
+                        .foregroundColor(.textMuted)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Button {
+                        viewModel.retryPreparing()
+                    } label: {
+                        Text("Try Again")
+                            .font(.system(size: 15, weight: .bold))
+                            .foregroundColor(.black)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 13)
+                            .background(Capsule().fill(Color.goldPrimary))
+                    }
+                    Button {
+                        viewModel.cancelPreparing()
+                    } label: {
+                        Text("Back")
+                            .font(.system(size: 13))
+                            .foregroundColor(.textMuted)
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .padding(24)
+                .gordianCard(borderColor: Color.goldPrimary.opacity(0.2))
+            } else {
+                VStack(spacing: 16) {
+                    ProgressView()
+                        .controlSize(.large)
+                        .tint(.goldPrimary)
+                    Text("Formulating 12 rapid-fire questions for your gut. The 60-second clock starts the moment they're ready.")
+                        .font(.system(size: 11))
+                        .foregroundColor(.textMuted)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(24)
+                .gordianCard(borderColor: Color.goldPrimary.opacity(0.2))
             }
-            .frame(maxWidth: .infinity)
-            .padding(24)
-            .gordianCard(borderColor: Color.goldPrimary.opacity(0.2))
 
             Spacer()
             Spacer()

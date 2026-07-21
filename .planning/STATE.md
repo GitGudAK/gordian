@@ -24,7 +24,12 @@
 - Spike findings skill: `.claude/skills/spike-findings-gordian/`
 - Open research: `.planning/research/questions.md` (proxy abuse protection)
 
-## Open items (2026-07-20 end of session)
+## Open items (2026-07-21)
+
+- AI-ALWAYS DECISION (user, 2026-07-21): no pre-canned questions ever; proxy retries a fallback model; app shows retry UI instead of the bank. CONSEQUENCE for Phase 3.5: the "unlimited offline sessions" free-tier leg no longer exists — freemium design needs a revisit (what does a free user get after the weekly AI meter is exhausted?).
+- Safety lockout shipped: client keyword screen + server SENSITIVE gate → 5-minute lockout with 988 resources. Consider expanding the keyword list and localizing crisis resources before launch.
+
+## Older open items (2026-07-20)
 
 - Notification permission on simulator stuck denied — flip in sim Settings app (keeps logs) or reinstall app (wipes logs) to live-test follow-ups/Daily Knot/Weekly Recap.
 - "Not-a-decision" input handling designed, not built: classification gains NOT_A_DECISION (+reframe suggestion) and SENSITIVE (crisis resources, never gamified) modes; offline heuristic; bounce UI on preparing screen.

@@ -167,12 +167,76 @@ final class SessionViewModel {
 
     private let proxy = ProxyClient()
 
+    // Sessions are AI-driven, always: the proxy retries a fallback model
+    // server-side; if the network itself is down, the user retries — there are
+    // no pre-canned session questions.
+    var preparingFailed = false
+
+    func retryPreparing() {
+        preparingFailed = false
+        generateBypassQuestionsAndStart()
+    }
+
+    func cancelPreparing() {
+        preparingFailed = false
+        focusScreenState = .home
+    }
+
+    // MARK: - Safety lockout (dangerous dilemmas → 5-minute pause)
+
+    private static let lockoutKey = "gordian_lockout_until"
+    static let lockoutDuration: TimeInterval = 5 * 60
+
+    var lockoutUntil: Date? {
+        let t = UserDefaults.standard.double(forKey: Self.lockoutKey)
+        return t > 0 ? Date(timeIntervalSince1970: t) : nil
+    }
+
+    var isLockedOut: Bool {
+        guard let until = lockoutUntil else { return false }
+        return until > Date()
+    }
+
+    func triggerLockout() {
+        UserDefaults.standard.set(Date().addingTimeInterval(Self.lockoutDuration).timeIntervalSince1970,
+                                  forKey: Self.lockoutKey)
+        focusScreenState = .lockedOut
+    }
+
+    func clearLockoutIfExpired() {
+        if focusScreenState == .lockedOut && !isLockedOut {
+            focusScreenState = .home
+        }
+    }
+
+    // Instant client-side screen for clearly dangerous phrasing; the proxy's
+    // model-level safety gate (mode=SENSITIVE) catches what keywords miss.
+    private static let dangerTerms = [
+        "kill", "hurt", "harm", "suicide", "end my life", "end it all",
+        "weapon", "gun", "knife", "attack", "revenge", "stab", "shoot",
+        "beat up", "burn down", "poison", "overdose", "steal", "rob"
+    ]
+
+    private func isDangerous(_ scenario: String) -> Bool {
+        let lower = scenario.lowercased()
+        return Self.dangerTerms.contains { lower.contains($0) }
+    }
+
     // MARK: - Dilemma setup
 
     func startDilemmaSetup(scenario: String) {
+        if isLockedOut {
+            focusScreenState = .lockedOut
+            return
+        }
+        if isDangerous(scenario) {
+            triggerLockout()
+            return
+        }
         dilemmaScenario = scenario
         rapidFireAnswers = []
         confrontedProbe = ""
+        preparingFailed = false
         focusScreenState = .preparing
         generateBypassQuestionsAndStart()
     }
@@ -209,20 +273,23 @@ final class SessionViewModel {
             isGeneratingQuestions = true
             defer { isGeneratingQuestions = false }
             do {
-                // Prompts and classification live server-side (proxy owns them).
+                // Prompts, classification, and the safety gate live server-side.
                 let plan = try await proxy.sessionPlan(scenario: scenario)
+                if plan.mode.uppercased() == "SENSITIVE" {
+                    triggerLockout()
+                    return
+                }
+                guard !plan.questions.isEmpty else {
+                    preparingFailed = true
+                    return
+                }
                 let mode: AnswerMode = (plan.mode.uppercased() == "BINARY" && !plan.optionA.isEmpty && !plan.optionB.isEmpty)
                     ? .binary(plan.optionA, plan.optionB)
                     : .yesNo
-                let fallback = mode == .yesNo ? Self.fallbackBypassQuestions : Self.fallbackBinaryQuestions
-                beginSession(with: plan.questions.isEmpty ? fallback : plan.questions, mode: mode)
+                beginSession(with: plan.questions, mode: mode)
             } catch {
-                // Offline / rate-limited / upstream failure → local bank, never a dead end.
-                if let (a, b) = parseBinaryOptions(from: scenario) {
-                    beginSession(with: Self.fallbackBinaryQuestions, mode: .binary(a, b))
-                } else {
-                    beginSession(with: Self.fallbackBypassQuestions, mode: .yesNo)
-                }
+                // AI-always: no canned questions. Surface the failure; the user retries.
+                preparingFailed = true
             }
         }
     }
@@ -419,6 +486,12 @@ final class SessionViewModel {
         if let (a, b) = parseBinaryOptions(from: dilemmaScenario) {
             beginSession(with: Self.fallbackBinaryQuestions, mode: .binary(a, b))
         }
+    }
+
+    // Exercises the safety lockout (client keyword screen fires before any network)
+    func startDemoSensitive() {
+        UserDefaults.standard.removeObject(forKey: Self.lockoutKey)
+        startDilemmaSetup(scenario: "Should I hurt my neighbor to get revenge?")
     }
 
     func startDemoVerdict() {

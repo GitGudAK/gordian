@@ -9,7 +9,7 @@ enum ActiveTab {
 }
 
 enum FocusScreenState {
-    case home, preparing, activeSession, verdict
+    case home, preparing, activeSession, verdict, lockedOut
 }
 
 // How the session's two answer buttons are labeled: NO/YES, or the dilemma's own options

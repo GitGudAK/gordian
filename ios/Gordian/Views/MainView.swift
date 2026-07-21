@@ -57,6 +57,8 @@ struct MainView: View {
                 viewModel.startDemoBinary()
             } else if ProcessInfo.processInfo.arguments.contains("-demoVerdict") {
                 viewModel.startDemoVerdict()
+            } else if ProcessInfo.processInfo.arguments.contains("-demoSensitive") {
+                viewModel.startDemoSensitive()
             } else if ProcessInfo.processInfo.arguments.contains("-tabLogs") {
                 viewModel.activeTab = .insights
             } else if ProcessInfo.processInfo.arguments.contains("-tabGuides") {
@@ -213,6 +215,8 @@ struct FocusTabView: View {
                 ActiveSessionView(viewModel: viewModel)
             case .verdict:
                 VerdictView(viewModel: viewModel)
+            case .lockedOut:
+                LockoutView(viewModel: viewModel)
             }
         }
         .onAppear { configureSpeech() }

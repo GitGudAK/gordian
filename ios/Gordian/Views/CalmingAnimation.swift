@@ -59,11 +59,13 @@ struct CalmingAnimation: View {
                         )
                     )
 
-                    // 2. Expanding ripple rings
+                    // 2. Expanding ripple rings — ease-out radius and a gentler fade
+                    // so rings drift outward like water instead of marching linearly
                     let rippleMax = min(size.width, size.height) / 2
                     for (progress, width) in [(ripple1, 2.0), (ripple2, 1.5)] where progress > 0 {
-                        let radius = baseRadius + (rippleMax - baseRadius) * progress
-                        let alpha = (1 - progress) * 0.35
+                        let eased = 1 - pow(1 - progress, 2)
+                        let radius = baseRadius + (rippleMax - baseRadius) * eased
+                        let alpha = pow(1 - progress, 1.5) * 0.28
                         let rect = CGRect(x: center.x - radius, y: center.y - radius,
                                           width: radius * 2, height: radius * 2)
                         context.stroke(
@@ -114,16 +116,29 @@ struct CalmingAnimation: View {
                     )
                 }
 
+                // Dark ink on the bright core (white-on-gold failed the contrast
+                // check), and the two phrases crossfade with the breath instead
+                // of swapping abruptly.
                 GeometryReader { geo in
                     VStack(spacing: 4) {
-                        Text((breatheScale > 1.0 ? "Breathe In Clarity" : "Release All Doubt").uppercased())
-                            .font(.system(size: 11, weight: .bold))
-                            .tracking(1.2)
-                            .foregroundColor(.white)
+                        // Non-overlapping fades with a quiet beat between the
+                        // phrases — a simultaneous crossfade superimposes them
+                        // into unreadable mush at mid-breath.
+                        let inhaleOpacity = min(max((breathePhase - 0.55) / 0.2, 0), 1)
+                        let exhaleOpacity = min(max((0.45 - breathePhase) / 0.2, 0), 1)
+                        ZStack {
+                            Text("BREATHE IN CLARITY")
+                                .opacity(Double(inhaleOpacity))
+                            Text("RELEASE ALL DOUBT")
+                                .opacity(Double(exhaleOpacity))
+                        }
+                        .font(.system(size: 11, weight: .bold))
+                        .tracking(1.2)
+                        .foregroundColor(.black.opacity(0.72))
                         Text("KNOT UNTIED")
                             .font(.system(size: 9, weight: .bold))
                             .tracking(1.5)
-                            .foregroundColor(.goldAccent.opacity(0.8))
+                            .foregroundColor(.black.opacity(0.42))
                     }
                     .frame(maxWidth: .infinity)
                     .position(x: geo.size.width / 2, y: geo.size.height * coreY)
