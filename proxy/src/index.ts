@@ -105,7 +105,9 @@ async function handleOperation(
     return errorResponse("spend_cap", "global daily capacity reached — try again tomorrow", meta);
   }
 
-  const modelVar = op === "session-plan" ? env.MODEL_SESSION_PLAN : env.MODEL_VERDICT;
+  // widened: generated Env types vars as literals, but they're operator-tunable
+  const modelVar = (op === "session-plan" ? env.MODEL_SESSION_PLAN : env.MODEL_VERDICT) as string | undefined;
+  const fallbackVar = (op === "session-plan" ? env.MODEL_SESSION_PLAN_FALLBACK : env.MODEL_VERDICT_FALLBACK) as string | undefined;
   const config = parseModelVar(modelVar ?? "gemini:gemini-3.5-flash");
   meta.provider = config.provider;
   meta.model = config.model;
@@ -115,8 +117,25 @@ async function handleOperation(
     const text = await adapterFor(config)(structured, config.model, env);
     payload = JSON.parse(text);
   } catch (err) {
-    const message = err instanceof UpstreamError ? err.message : "upstream call failed";
-    return errorResponse("upstream_error", message, meta);
+    // AI-always: one retry on the fallback model before failing to the client.
+    const fallback = fallbackVar && fallbackVar !== modelVar ? parseModelVar(fallbackVar) : null;
+    if (!fallback) {
+      const message = err instanceof UpstreamError ? err.message : "upstream call failed";
+      return errorResponse("upstream_error", message, meta);
+    }
+    const retrySpend = await spendStub.checkAndIncrement();
+    if (!retrySpend.allowed) {
+      return errorResponse("spend_cap", "global daily capacity reached — try again tomorrow", meta);
+    }
+    meta.provider = fallback.provider;
+    meta.model = fallback.model;
+    try {
+      const text = await adapterFor(fallback)(structured, fallback.model, env);
+      payload = JSON.parse(text);
+    } catch (retryErr) {
+      const message = retryErr instanceof UpstreamError ? retryErr.message : "upstream call failed";
+      return errorResponse("upstream_error", message, meta);
+    }
   }
 
   meta.outcome = "ok";

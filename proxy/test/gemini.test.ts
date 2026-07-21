@@ -164,6 +164,12 @@ describe("prompt port (verbatim sentinels)", () => {
     expect(system).toContain("Output ONLY the JSON object.");
   });
 
+  it("session-plan prompt includes the STEP 0 safety gate (SENSITIVE mode)", () => {
+    const system = ops.sessionPlanSystem("x");
+    expect(system).toContain("STEP 0 — SAFETY GATE");
+    expect(system).toContain("mode='SENSITIVE'");
+  });
+
   it("verdict prompt reconstructs the rapid-fire transcript in the exact Swift line format", () => {
     const answers = [
       { question: "Q1?", choice: "YES", reflection: "" },

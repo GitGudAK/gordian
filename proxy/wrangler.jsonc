@@ -10,6 +10,10 @@
   "vars": {
     "MODEL_SESSION_PLAN": "gemini:gemini-3.5-flash",
     "MODEL_VERDICT": "gemini:gemini-3.5-flash",
+    // AI-always policy: if the primary model fails, retry once on the fallback
+    // model before the client ever sees upstream_error.
+    "MODEL_SESSION_PLAN_FALLBACK": "gemini:gemini-flash-latest",
+    "MODEL_VERDICT_FALLBACK": "gemini:gemini-flash-latest",
     "DAILY_CALL_CAP": "1500",
     "RATE_LIMIT_CALLS": "6",
     "RATE_LIMIT_WINDOW_MIN": "10",

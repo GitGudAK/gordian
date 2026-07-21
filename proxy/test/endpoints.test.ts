@@ -150,20 +150,43 @@ describe("bad_request contract", () => {
   });
 });
 
-describe("upstream_error contract", () => {
-  it("upstream 500 → 502 upstream_error", async () => {
+describe("upstream_error contract + AI-always fallback chain", () => {
+  it("primary failure falls back to the second model and succeeds", async () => {
+    const goodBody = JSON.stringify({
+      candidates: [
+        { content: { parts: [{ text: '{"mode":"YES_NO","optionA":"No","optionB":"Yes","questions":["q?"]}' }] } },
+      ],
+    });
+    const modelsSeen: string[] = [];
+    mockOnce(GEMINI_ORIGIN, (req) => {
+      modelsSeen.push(new URL(req.url).pathname);
+      return new Response(JSON.stringify({ error: { code: 500, message: "boom" } }), { status: 500 });
+    });
+    mockOnce(GEMINI_ORIGIN, (req) => {
+      modelsSeen.push(new URL(req.url).pathname);
+      return new Response(goodBody, { status: 200, headers: { "content-type": "application/json" } });
+    });
+
+    const res = await post("/v1/session-plan", DEVICE, JSON.stringify({ scenario: "x" }));
+    expect(res.status).toBe(200);
+    expect(modelsSeen[0]).toContain("gemini-3.5-flash");
+    expect(modelsSeen[1]).toContain("gemini-flash-latest");
+  });
+
+  it("both models failing → 502 upstream_error", async () => {
     mockUpstreamText(JSON.stringify({ error: { code: 500, message: "boom" } }), 500);
+    mockUpstreamText(JSON.stringify({ error: { code: 500, message: "boom again" } }), 500);
     const res = await post("/v1/session-plan", DEVICE, JSON.stringify({ scenario: "x" }));
     expect(res.status).toBe(502);
     expect(await errorCode(res)).toBe("upstream_error");
   });
 
-  it("upstream 200 with irreparable garbage → 502 upstream_error", async () => {
-    mockUpstreamText(
-      JSON.stringify({
-        candidates: [{ content: { parts: [{ text: "I cannot answer in JSON, sorry" }] } }],
-      }),
-    );
+  it("irreparable garbage from both attempts → 502 upstream_error", async () => {
+    const garbage = JSON.stringify({
+      candidates: [{ content: { parts: [{ text: "I cannot answer in JSON, sorry" }] } }],
+    });
+    mockUpstreamText(garbage);
+    mockUpstreamText(garbage);
     const res = await post("/v1/session-plan", DEVICE, JSON.stringify({ scenario: "x" }));
     expect(res.status).toBe(502);
     expect(await errorCode(res)).toBe("upstream_error");
