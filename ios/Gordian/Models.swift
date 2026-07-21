@@ -12,6 +12,26 @@ enum FocusScreenState {
     case home, preparing, activeSession, verdict
 }
 
+// How the session's two answer buttons are labeled: NO/YES, or the dilemma's own options
+enum AnswerMode: Equatable {
+    case yesNo
+    case binary(String, String)
+
+    var leftLabel: String {
+        switch self {
+        case .yesNo: return "No"
+        case .binary(let a, _): return a
+        }
+    }
+
+    var rightLabel: String {
+        switch self {
+        case .yesNo: return "Yes"
+        case .binary(_, let b): return b
+        }
+    }
+}
+
 struct SimulationTopic {
     let title: String
     let description: String

@@ -13,21 +13,33 @@ struct GeminiContent: Codable {
     let parts: [GeminiPart]
 }
 
-struct GeminiSchema: Codable {
+// Recursive (class-based) so schemas can nest, e.g. an OBJECT containing an ARRAY field
+final class GeminiSchema: Codable {
     let type: String
-    let items: [String: String]?
-    let properties: [String: [String: String]]?
+    let items: GeminiSchema?
+    let properties: [String: GeminiSchema]?
     let required: [String]?
 
-    static let stringArray = GeminiSchema(type: "ARRAY", items: ["type": "STRING"], properties: nil, required: nil)
+    init(type: String, items: GeminiSchema? = nil, properties: [String: GeminiSchema]? = nil, required: [String]? = nil) {
+        self.type = type
+        self.items = items
+        self.properties = properties
+        self.required = required
+    }
+
+    static let string = GeminiSchema(type: "STRING")
+    static let stringArray = GeminiSchema(type: "ARRAY", items: .string)
 
     static func object(fields: [String]) -> GeminiSchema {
         GeminiSchema(
             type: "OBJECT",
-            items: nil,
-            properties: Dictionary(uniqueKeysWithValues: fields.map { ($0, ["type": "STRING"]) }),
+            properties: Dictionary(uniqueKeysWithValues: fields.map { ($0, GeminiSchema.string) }),
             required: fields
         )
+    }
+
+    static func object(properties: [String: GeminiSchema], required: [String]) -> GeminiSchema {
+        GeminiSchema(type: "OBJECT", properties: properties, required: required)
     }
 }
 
@@ -127,12 +139,16 @@ struct GeminiClient {
         throw GeminiError.badPayload
     }
 
-    func generateObject<T: Decodable>(_ type: T.Type, fields: [String], system: String, user: String, temperature: Float) async throws -> T {
-        let text = try await generateText(system: system, user: user, temperature: temperature, schema: .object(fields: fields))
+    func generateObject<T: Decodable>(_ type: T.Type, schema: GeminiSchema, system: String, user: String, temperature: Float) async throws -> T {
+        let text = try await generateText(system: system, user: user, temperature: temperature, schema: schema)
         let clean = Self.cleanJSONText(text)
         guard let value = try? JSONDecoder().decode(T.self, from: Data(clean.utf8)) else {
             throw GeminiError.badPayload
         }
         return value
+    }
+
+    func generateObject<T: Decodable>(_ type: T.Type, fields: [String], system: String, user: String, temperature: Float) async throws -> T {
+        try await generateObject(type, schema: .object(fields: fields), system: system, user: user, temperature: temperature)
     }
 }

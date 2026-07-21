@@ -96,36 +96,58 @@ struct ActiveSessionView: View {
 
             // 3. Bottom interaction controls (voice moves to its own experience — see spike 005/006)
             VStack(spacing: 12) {
-                // YES / NO
+                // Answer buttons — NO/YES, or the dilemma's own two options
                 HStack(spacing: 16) {
-                    Button {
-                        viewModel.submitRapidFireAnswer(choice: "NO")
-                    } label: {
-                        HStack(spacing: 8) {
-                            Image(systemName: "xmark")
-                                .foregroundColor(.redAccent)
-                            Text("No")
-                                .font(.system(size: 16, weight: .medium))
-                                .foregroundColor(.white)
+                    switch viewModel.answerMode {
+                    case .yesNo:
+                        Button {
+                            viewModel.submitRapidFireAnswer(choice: "NO")
+                        } label: {
+                            HStack(spacing: 8) {
+                                Image(systemName: "xmark")
+                                    .foregroundColor(.redAccent)
+                                Text("No")
+                                    .font(.system(size: 16, weight: .medium))
+                                    .foregroundColor(.white)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 56)
+                            .background(RoundedRectangle(cornerRadius: 24).fill(Color.darkSurfaceVariant))
                         }
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 56)
-                        .background(RoundedRectangle(cornerRadius: 24).fill(Color.darkSurfaceVariant))
-                    }
 
-                    Button {
-                        viewModel.submitRapidFireAnswer(choice: "YES")
-                    } label: {
-                        HStack(spacing: 8) {
-                            Image(systemName: "checkmark")
-                                .foregroundColor(.black)
-                            Text("Yes")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundColor(.black)
+                        Button {
+                            viewModel.submitRapidFireAnswer(choice: "YES")
+                        } label: {
+                            HStack(spacing: 8) {
+                                Image(systemName: "checkmark")
+                                    .foregroundColor(.black)
+                                Text("Yes")
+                                    .font(.system(size: 16, weight: .bold))
+                                    .foregroundColor(.black)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 56)
+                            .background(RoundedRectangle(cornerRadius: 24).fill(Color.goldPrimary))
                         }
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 56)
-                        .background(RoundedRectangle(cornerRadius: 24).fill(Color.goldPrimary))
+
+                    case .binary(let optionA, let optionB):
+                        // Equal styling on purpose — no visual bias between the two options
+                        ForEach([optionA, optionB], id: \.self) { option in
+                            Button {
+                                viewModel.submitRapidFireAnswer(choice: option)
+                            } label: {
+                                Text(option)
+                                    .font(.system(size: 16, weight: .bold))
+                                    .foregroundColor(.goldPrimary)
+                                    .lineLimit(2)
+                                    .minimumScaleFactor(0.6)
+                                    .multilineTextAlignment(.center)
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 56)
+                                    .background(RoundedRectangle(cornerRadius: 24).fill(Color.darkSurfaceVariant))
+                                    .overlay(RoundedRectangle(cornerRadius: 24).stroke(Color.goldPrimary.opacity(0.6), lineWidth: 1.5))
+                            }
+                        }
                     }
                 }
 

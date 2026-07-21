@@ -38,6 +38,8 @@ struct MainView: View {
             #if DEBUG
             if ProcessInfo.processInfo.arguments.contains("-demoSession") {
                 viewModel.startDemoSession()
+            } else if ProcessInfo.processInfo.arguments.contains("-demoBinary") {
+                viewModel.startDemoBinary()
             } else if ProcessInfo.processInfo.arguments.contains("-demoVerdict") {
                 viewModel.startDemoVerdict()
             }

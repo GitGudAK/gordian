@@ -83,6 +83,23 @@ final class SessionViewModel {
     var selectedTopic: SimulationTopic
     var activeQuestions: [String]
     var currentQuestionIndex = 0
+    var answerMode: AnswerMode = .yesNo
+
+    // Generic either/or questions used when there's no API key for a binary dilemma
+    private static let fallbackBinaryQuestions = [
+        "Which one excites you more right now?",
+        "Which would you regret never trying?",
+        "If both cost the same effort, which one?",
+        "Which fits the life you want in five years?",
+        "Which would you start tonight if forced?",
+        "Which one keeps coming back to mind?",
+        "If a friend had to pick for you, which?",
+        "Which feels like growth, not comfort?",
+        "Flip a coin — which do you secretly hope for?",
+        "Which would your 80-year-old self pick?",
+        "Which is the braver choice?",
+        "Which feels like play, not work?"
+    ]
 
     // MARK: - Timer
 
@@ -143,21 +160,47 @@ final class SessionViewModel {
         generateBypassQuestionsAndStart()
     }
 
-    private func beginSession(with questions: [String]) {
+    private func beginSession(with questions: [String], mode: AnswerMode) {
         let title = dilemmaScenario.count > 25 ? String(dilemmaScenario.prefix(25)) + "..." : dilemmaScenario
         selectedTopic = SimulationTopic(title: title, description: dilemmaScenario, defaultQuestions: questions)
         activeQuestions = questions
+        answerMode = mode
         currentQuestionIndex = 0
         focusScreenState = .activeSession
         countdownSeconds = 60
         startTimer()
     }
 
+    // Heuristic "X or Y" extraction for the no-key fallback (Gemini does this properly)
+    private func parseBinaryOptions(from scenario: String) -> (String, String)? {
+        let lower = scenario.lowercased()
+        guard let orRange = lower.range(of: " or ") else { return nil }
+        let punctuation = CharacterSet(charactersIn: "?.!,;")
+        let beforeWords = lower[..<orRange.lowerBound].split(separator: " ")
+        let afterWords = lower[orRange.upperBound...].split(separator: " ")
+        guard let last = beforeWords.last, !afterWords.isEmpty else { return nil }
+        let optionA = String(last).trimmingCharacters(in: punctuation)
+        let optionB = afterWords.prefix(3).joined(separator: " ").trimmingCharacters(in: punctuation)
+        guard optionA.count > 1, optionB.count > 1, optionA != optionB else { return nil }
+        return (optionA.capitalized, optionB.capitalized)
+    }
+
+    private struct SessionPlanPayload: Decodable {
+        let mode: String
+        let optionA: String
+        let optionB: String
+        let questions: [String]
+    }
+
     private func generateBypassQuestionsAndStart() {
         let scenario = dilemmaScenario
 
         guard let client else {
-            beginSession(with: Self.fallbackBypassQuestions)
+            if let (a, b) = parseBinaryOptions(from: scenario) {
+                beginSession(with: Self.fallbackBinaryQuestions, mode: .binary(a, b))
+            } else {
+                beginSession(with: Self.fallbackBypassQuestions, mode: .yesNo)
+            }
             return
         }
 
@@ -166,19 +209,40 @@ final class SessionViewModel {
             defer { isGeneratingQuestions = false }
             let system = "You are an expert cognitive psychologist specializing in rapid gut-instinct bypass. "
                 + "The user has a dilemma: '\(scenario)'.\n"
-                + "Generate exactly 12 rapid-fire, high-intensity bypass questions (maximum 10 words each, answers should be Yes or No) "
-                + "designed to bypass the analytical brain, force an immediate gut response, and highlight subconscious desires or core fears.\n"
-                + "Format your response as a JSON array of strings: [\"Question 1?\", \"Question 2?\", ..., \"Question 12?\"] "
-                + "Output ONLY the JSON array. No markdown, no formatting, no code blocks."
+                + "STEP 1 — Classify the dilemma. If it is a choice between two named alternatives (e.g. 'Spanish or German', 'take the job or stay'), set mode='BINARY' and extract short Title Case labels (1-3 words) as optionA and optionB. "
+                + "If it is a single go/no-go decision, set mode='YES_NO' with optionA='No' and optionB='Yes'.\n"
+                + "STEP 2 — Generate exactly 12 rapid-fire, high-intensity bypass questions (maximum 12 words each) designed to bypass the analytical brain and force an immediate gut response. "
+                + "CRITICAL: every question must be answerable INSTANTLY by tapping one of the two option buttons. "
+                + "For BINARY mode, frame questions like 'Which one would you start tonight?' or 'Which would you regret never trying?' — never yes/no phrasing. "
+                + "For YES_NO mode, use yes/no phrasing.\n"
+                + "Return JSON: {\"mode\": ..., \"optionA\": ..., \"optionB\": ..., \"questions\": [12 strings]}. Output ONLY the JSON object."
             do {
-                let generated = try await client.generateStringArray(
+                let plan = try await client.generateObject(
+                    SessionPlanPayload.self,
+                    schema: .object(
+                        properties: [
+                            "mode": .string,
+                            "optionA": .string,
+                            "optionB": .string,
+                            "questions": .stringArray
+                        ],
+                        required: ["mode", "optionA", "optionB", "questions"]
+                    ),
                     system: system,
-                    user: "Generate exactly 12 psychological bypass questions based on the dilemma and dialogue.",
+                    user: "Classify the dilemma and generate the 12 bypass questions as JSON.",
                     temperature: 0.8
                 )
-                beginSession(with: generated.isEmpty ? Self.fallbackBypassQuestions : generated)
+                let mode: AnswerMode = (plan.mode.uppercased() == "BINARY" && !plan.optionA.isEmpty && !plan.optionB.isEmpty)
+                    ? .binary(plan.optionA, plan.optionB)
+                    : .yesNo
+                let fallback = mode == .yesNo ? Self.fallbackBypassQuestions : Self.fallbackBinaryQuestions
+                beginSession(with: plan.questions.isEmpty ? fallback : plan.questions, mode: mode)
             } catch {
-                beginSession(with: Self.fallbackBypassQuestions)
+                if let (a, b) = parseBinaryOptions(from: scenario) {
+                    beginSession(with: Self.fallbackBinaryQuestions, mode: .binary(a, b))
+                } else {
+                    beginSession(with: Self.fallbackBypassQuestions, mode: .yesNo)
+                }
             }
         }
     }
@@ -218,6 +282,7 @@ final class SessionViewModel {
         verdictDecision = ""
         confrontedProbe = ""
         rapidFireAnswers = []
+        answerMode = .yesNo
         focusScreenState = .home
     }
 
@@ -259,22 +324,36 @@ final class SessionViewModel {
         let probe: String
     }
 
-    // Direct answer derived from the yes/no tally — used when there's no API key
+    // Direct answer derived from the answer tally — used when there's no API key
     // or the Gemini call fails. Returns (decision text, majority choice for the log).
     private func tallyDecision() -> (String, String) {
-        let yes = rapidFireAnswers.filter { $0.choice == "YES" }.count
-        let no = rapidFireAnswers.filter { $0.choice == "NO" }.count
         let total = rapidFireAnswers.count
         if total == 0 {
             return ("No gut answers logged — the knot stays tied. Run it again and answer fast.", "REFLECT")
         }
-        if yes > no {
-            return ("Your gut says YES — \(yes) of \(total) rapid answers leaned toward action.", "YES")
+        let left = answerMode.leftLabel
+        let right = answerMode.rightLabel
+        let leftCount = rapidFireAnswers.filter { $0.choice.caseInsensitiveCompare(left) == .orderedSame }.count
+        let rightCount = rapidFireAnswers.filter { $0.choice.caseInsensitiveCompare(right) == .orderedSame }.count
+
+        switch answerMode {
+        case .yesNo:
+            if rightCount > leftCount {
+                return ("Your gut says YES — \(rightCount) of \(total) rapid answers leaned toward action.", "YES")
+            }
+            if leftCount > rightCount {
+                return ("Your gut says NO — \(leftCount) of \(total) rapid answers pulled away.", "NO")
+            }
+            return ("Dead even (\(rightCount)–\(leftCount)) — your gut is genuinely split. Sit with the probe below.", "REFLECT")
+        case .binary:
+            if rightCount > leftCount {
+                return ("Your gut picked \(right.uppercased()) — \(rightCount) of \(total) rapid answers.", right)
+            }
+            if leftCount > rightCount {
+                return ("Your gut picked \(left.uppercased()) — \(leftCount) of \(total) rapid answers.", left)
+            }
+            return ("Dead even between \(left) and \(right) — your gut is genuinely split. Sit with the probe below.", "REFLECT")
         }
-        if no > yes {
-            return ("Your gut says NO — \(no) of \(total) rapid answers pulled away.", "NO")
-        }
-        return ("Dead even (\(yes)–\(no)) — your gut is genuinely split. Sit with the probe below.", "REFLECT")
     }
 
     func evaluateFullSessionAndLog() {
@@ -312,7 +391,7 @@ final class SessionViewModel {
                 + "Analyze their answers deeply. Look for inconsistencies, emotional triggers, subconscious patterns, and where their gut stance truly lies versus their rationalizations. "
                 + "Synthesize this into a final definitive verdict (The Gordian Verdict). "
                 + "Your response MUST be in JSON format with exactly four string fields:\n"
-                + "1. \"decision\": THE answer. One direct, decisive sentence answering the user's dilemma in their own terms (max 15 words). No hedging, no mysticism. Example: 'Take the startup job.' or 'Stay in the US for now.'\n"
+                + "1. \"decision\": THE answer. One direct, decisive sentence answering the user's dilemma in their own terms (max 15 words). If the dilemma is a choice between two options, NAME the winner. No hedging, no mysticism. Example: 'Learn Spanish.' or 'Take the startup job.'\n"
                 + "2. \"sentiment\": A single short affective state (e.g., 'RESOLVED', 'EMERGENT CLARITY', 'DIVIDED GUTS').\n"
                 + "3. \"analysis\": 2-3 plain, concrete sentences explaining WHY that is their answer, referencing their actual rapid-fire responses. Everyday language — no jargon, no 'cognitive alignment' talk.\n"
                 + "4. \"probe\": One practical follow-up question that pushes them toward the first concrete step.\n"
@@ -365,10 +444,17 @@ final class SessionViewModel {
     }
 
     #if DEBUG
-    // Launch-argument hooks (-demoSession / -demoVerdict) so tooling can screenshot flows
+    // Launch-argument hooks (-demoSession / -demoBinary / -demoVerdict) so tooling can screenshot flows
     func startDemoSession() {
-        dilemmaScenario = "Should I stay in the US or move back home to be closer to family?"
-        beginSession(with: Self.fallbackBypassQuestions)
+        dilemmaScenario = "Should I take the startup offer?"
+        beginSession(with: Self.fallbackBypassQuestions, mode: .yesNo)
+    }
+
+    func startDemoBinary() {
+        dilemmaScenario = "Should I learn Spanish or German?"
+        if let (a, b) = parseBinaryOptions(from: dilemmaScenario) {
+            beginSession(with: Self.fallbackBinaryQuestions, mode: .binary(a, b))
+        }
     }
 
     func startDemoVerdict() {
