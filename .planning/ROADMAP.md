@@ -10,7 +10,7 @@
 **Goal:** A small deployed service that holds the single Gemini API key and serves the app's three structured-output calls (clarifying questions, bypass questions, verdict) to anonymous, attested devices — so users get AI with zero setup and the key never ships in the app.
 **Requirements:** REQ-001, REQ-002, REQ-005, REQ-006 (server side)
 **Depends on:** —
-**Notes:** Fully buildable/testable on this machine (no Xcode needed). Open research question in `.planning/research/questions.md` (abuse protection). Spike-002 hardening (responseSchema, parts concat, repair ladder) moves server-side.
+**Notes:** Fully buildable/testable on this machine (no Xcode needed). Open research question in `.planning/research/questions.md` (abuse protection). Spike-002 hardening (responseSchema, parts concat, repair ladder) moves server-side. Also serves `guides.json` (remote guide content) — prerequisite for new-guide notifications (see seeds/habit-loops.md).
 
 ### Phase 2: iOS First Build & Simulator Bring-Up
 **Status:** Pending
@@ -41,3 +41,4 @@
 
 - **Voice session mode** — conversational spoken sessions with a calming voice (seed: `.planning/seeds/voice-session-mode.md`, spike plan pre-scoped). Deferred 2026-07-20.
 - **Re-engagement layer** — haptics/sound, widgets, Siri intents, Live Activity (seed: `.planning/seeds/re-engagement-layer.md`).
+- **Habit loops** — decision follow-ups ("did you act on it?"), Daily Knot, decisiveness streaks, weekly recap, new-guide notifications (seed: `.planning/seeds/habit-loops.md`). New-guide notifications depend on Phase 1's remote guides endpoint.
