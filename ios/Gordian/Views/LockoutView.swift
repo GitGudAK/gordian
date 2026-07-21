@@ -24,7 +24,7 @@ struct LockoutView: View {
                     .foregroundColor(.textLight)
 
                 VStack(spacing: 14) {
-                    Text("Gordian is built for everyday dilemmas. What you described could hurt you or someone else. A 60-second gut exercise is the wrong tool for it.")
+                    Text("Gordian is built for everyday dilemmas. What you described could hurt you or someone else.")
                         .font(.system(size: 14))
                         .foregroundColor(.textLight)
                         .multilineTextAlignment(.center)
