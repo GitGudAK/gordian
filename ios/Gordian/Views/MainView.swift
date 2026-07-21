@@ -96,10 +96,8 @@ struct HeaderView: View {
                 HStack(spacing: 12) {
                     Image("KnotLogo")
                         .resizable()
-                        .scaledToFill()
+                        .scaledToFit()
                         .frame(width: 36, height: 36)
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
-                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.white.opacity(0.1), lineWidth: 1))
                     Text("Gordian")
                         .font(.system(size: 20, weight: .medium))
                         .tracking(-0.5)

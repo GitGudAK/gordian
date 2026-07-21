@@ -13,13 +13,12 @@ struct FocusHomeView: View {
             VStack(spacing: 20) {
                 // Hero logo & title
                 VStack(spacing: 8) {
+                    // The mark sits directly on the background: no tile, no
+                    // border, no box (asset keyed to transparency, ticket #12)
                     Image("KnotLogo")
                         .resizable()
-                        .scaledToFill()
-                        .frame(width: 96, height: 96)
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
-                        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.goldPrimary, lineWidth: 1.5))
-                        .shadow(radius: 10)
+                        .scaledToFit()
+                        .frame(width: 104, height: 104)
                     Text("GORDIAN")
                         .font(.system(size: 32, weight: .heavy))
                         .tracking(4)
