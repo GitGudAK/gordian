@@ -172,6 +172,9 @@ final class SessionViewModel {
     // no pre-canned session questions.
     var preparingFailed = false
 
+    /// Component sub-decisions returned when a dilemma classifies TOO_BIG.
+    var suggestedKnots: [String] = []
+
     func retryPreparing() {
         preparingFailed = false
         generateBypassQuestionsAndStart()
@@ -287,6 +290,17 @@ final class SessionViewModel {
                 let plan = try await proxy.sessionPlan(scenario: scenario)
                 if plan.mode.uppercased() == "SENSITIVE" {
                     triggerLockout()
+                    return
+                }
+                if plan.mode.uppercased() == "TOO_BIG" {
+                    // The dilemma bundles several decisions; the payload carries
+                    // the component knots. Show them; the user picks one to run.
+                    guard !plan.questions.isEmpty else {
+                        preparingFailed = true
+                        return
+                    }
+                    suggestedKnots = plan.questions
+                    focusScreenState = .tooBig
                     return
                 }
                 guard !plan.questions.isEmpty else {
@@ -498,6 +512,11 @@ final class SessionViewModel {
         if let (a, b) = parseBinaryOptions(from: dilemmaScenario) {
             beginSession(with: Self.fallbackBinaryQuestions, mode: .binary(a, b))
         }
+    }
+
+    // Exercises the TOO_BIG decomposition via the real proxy round-trip
+    func startDemoTooBig() {
+        startDilemmaSetup(scenario: "Should I sell my company, move my family to Portugal, and have another kid?")
     }
 
     // Exercises the safety lockout (client keyword screen fires before any network)

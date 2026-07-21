@@ -69,6 +69,8 @@ struct MainView: View {
                 viewModel.startDemoVerdict()
             } else if ProcessInfo.processInfo.arguments.contains("-demoSensitive") {
                 viewModel.startDemoSensitive()
+            } else if ProcessInfo.processInfo.arguments.contains("-demoTooBig") {
+                viewModel.startDemoTooBig()
             } else if ProcessInfo.processInfo.arguments.contains("-demoRedeem") {
                 showRedeemDemo = true
             } else if ProcessInfo.processInfo.arguments.contains("-tabLogs") {
@@ -233,6 +235,8 @@ struct FocusTabView: View {
                 VerdictView(viewModel: viewModel)
             case .lockedOut:
                 LockoutView(viewModel: viewModel)
+            case .tooBig:
+                TooBigView(viewModel: viewModel)
             }
         }
         .onAppear { configureSpeech() }

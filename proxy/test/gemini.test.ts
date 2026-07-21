@@ -170,6 +170,12 @@ describe("prompt port (verbatim sentinels)", () => {
     expect(system).toContain("mode='SENSITIVE'");
   });
 
+  it("session-plan prompt includes the TOO_BIG scope check with knot decomposition", () => {
+    const system = ops.sessionPlanSystem("x");
+    expect(system).toContain("mode='TOO_BIG'");
+    expect(system).toContain("the individual knots");
+  });
+
   it("verdict prompt reconstructs the rapid-fire transcript in the exact Swift line format", () => {
     const answers = [
       { question: "Q1?", choice: "YES", reflection: "" },
