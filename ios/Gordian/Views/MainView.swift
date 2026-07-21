@@ -109,6 +109,37 @@ struct HeaderView: View {
     }
 }
 
+// Simplified brand mark for small sizes: two interlocked diamonds, echoing the
+// Art Deco diamond motifs of the full knot art (which muddies below ~40pt)
+struct KnotGlyph: View {
+    var color: Color = .black
+
+    var body: some View {
+        Canvas { context, size in
+            let r = min(size.width, size.height) * 0.34
+            let offset = r * 0.55
+            let center = CGPoint(x: size.width / 2, y: size.height / 2)
+            let lineWidth = min(size.width, size.height) * 0.1
+            let style = StrokeStyle(lineWidth: lineWidth, lineCap: .round, lineJoin: .round)
+
+            func diamond(at c: CGPoint) -> Path {
+                var path = Path()
+                path.move(to: CGPoint(x: c.x, y: c.y - r))
+                path.addLine(to: CGPoint(x: c.x + r, y: c.y))
+                path.addLine(to: CGPoint(x: c.x, y: c.y + r))
+                path.addLine(to: CGPoint(x: c.x - r, y: c.y))
+                path.closeSubpath()
+                return path
+            }
+
+            let left = CGPoint(x: center.x - offset, y: center.y)
+            let right = CGPoint(x: center.x + offset, y: center.y)
+            context.stroke(diamond(at: left), with: .color(color), style: style)
+            context.stroke(diamond(at: right), with: .color(color), style: style)
+        }
+    }
+}
+
 struct BottomNavBar: View {
     let activeTab: ActiveTab
     let onSelect: (ActiveTab) -> Void
@@ -129,9 +160,8 @@ struct BottomNavBar: View {
                     Circle()
                         .stroke(Color.darkBackground, lineWidth: 4)
                         .frame(width: 62, height: 62)
-                    Image(systemName: "bolt.fill")
-                        .font(.system(size: 26, weight: .bold))
-                        .foregroundColor(.black)
+                    KnotGlyph()
+                        .frame(width: 30, height: 30)
                 }
                 .offset(y: -14)
             }
