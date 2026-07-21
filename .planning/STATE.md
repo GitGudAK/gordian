@@ -6,7 +6,7 @@
 ## Position
 
 - Milestone: v1 — iOS app on the App Store
-- Current phase: 1 COMPLETE (2026-07-21) — proxy LIVE at `https://gordian-proxy.gordian-app.workers.dev` with fresh key; both operations smoke-tested against real Gemini; error contract verified on production. Phase 3 COMPLETE same day: app → proxy wired (ProxyClient.swift, X-Device-ID), GeminiClient + key plumbing deleted, live-verified in Simulator (AI questions + AI verdict through the proxy with zero keys in the app). Next: Phase 3.5 (monetization) or Phase 4 (polish).
+- Current phase: 1 COMPLETE (2026-07-21) — proxy LIVE at `https://gordian-proxy.gordian-app.workers.dev` with fresh key; both operations smoke-tested against real Gemini; error contract verified on production. Phase 5 submission prep DONE 2026-07-21 (compliance flag, live privacy/support pages, 6.9in screenshots, full ASC metadata pack in .planning/launch/) — awaiting operator: Apple Developer enrollment, ASC record + IAPs, archive/upload from Xcode. Phase 3 COMPLETE same day: app → proxy wired (ProxyClient.swift, X-Device-ID), GeminiClient + key plumbing deleted, live-verified in Simulator (AI questions + AI verdict through the proxy with zero keys in the app). Next: Phase 3.5 (monetization) or Phase 4 (polish).
 - iOS port: BUILDS AND RUNS — Xcode 16.4 installed 2026-07-20 (Intel Mac → xcodes+aria2 route; App Store Xcode is Apple-Silicon-only). First build: zero errors. Running on iPhone 16 Pro simulator (iOS 18.6). Phase 2 (first build & bring-up) effectively underway.
 
 ## Decisions (locked)

@@ -22,6 +22,7 @@ import {
   validateVerdictBody,
 } from "./validate.ts";
 import { logRequest } from "./log.ts";
+import { privacyPage, supportPage } from "./pages.ts";
 import type { MeterResult, MeteredOp } from "./do/deviceMeter.ts";
 
 export { DeviceMeterDO } from "./do/deviceMeter.ts";
@@ -168,6 +169,14 @@ export default {
         // Reserved route: remote guide content ships in a later phase.
         meta.op = "guides";
         response = errorResponse("not_found", "guides not yet available", meta);
+      } else if (request.method === "GET" && url.pathname === "/privacy") {
+        meta.op = "privacy";
+        meta.outcome = "ok";
+        response = privacyPage();
+      } else if (request.method === "GET" && url.pathname === "/support") {
+        meta.op = "support";
+        meta.outcome = "ok";
+        response = supportPage();
       } else {
         response = errorResponse("not_found", "no such route", meta);
       }

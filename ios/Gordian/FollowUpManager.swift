@@ -96,6 +96,10 @@ final class FollowUpManager: NSObject, UNUserNotificationCenterDelegate {
     /// Permission is requested here — at the moment of first value, not at launch.
     func scheduleFollowUp(decision: String, followUpID: String) {
         guard followUpsEnabled, !decision.isEmpty else { return }
+        #if DEBUG
+        // Screenshot tooling: never surface the permission dialog
+        if ProcessInfo.processInfo.arguments.contains("-noNotifPrompt") { return }
+        #endif
         Task {
             let center = UNUserNotificationCenter.current()
             let granted = (try? await center.requestAuthorization(options: [.alert, .sound, .badge])) ?? false

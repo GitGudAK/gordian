@@ -183,6 +183,7 @@
 				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Gordian listens to your spoken reflections during 60-second decision sessions.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Gordian transcribes your voice on-device so your raw reactions can shape the session.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -214,6 +215,7 @@
 				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Gordian listens to your spoken reflections during 60-second decision sessions.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Gordian transcribes your voice on-device so your raw reactions can shape the session.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;

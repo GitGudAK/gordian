@@ -51,7 +51,15 @@ struct MainView: View {
         }
         .onAppear {
             viewModel.modelContext = modelContext
+            #if DEBUG
+            // -noNotifPrompt: screenshot tooling — skip the notification
+            // authorization request so no system dialog covers the UI
+            if !ProcessInfo.processInfo.arguments.contains("-noNotifPrompt") {
+                FollowUpManager.shared.refreshScheduledContent()
+            }
+            #else
             FollowUpManager.shared.refreshScheduledContent()
+            #endif
             EntitlementManager.shared.start()
             #if DEBUG
             if ProcessInfo.processInfo.arguments.contains("-expireTrial") {
