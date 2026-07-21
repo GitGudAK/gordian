@@ -25,10 +25,10 @@
 **Requirements:** REQ-001, REQ-002, REQ-003, REQ-006
 **Depends on:** Phase 1, Phase 2
 
-### Phase 3.5: Paid-App Setup (was: Monetization — superseded 2026-07-21)
-**Status:** Pending
-**Goal:** Gordian ships as a PAID app (one-time purchase, price TBD ~$4.99-9.99). No freemium, no meter, no subscription: every buyer gets unlimited AI sessions. Work: App Store paid-app configuration, price point decision, promo codes for press/friends (100/version, free-download grants). No StoreKit code needed in-app.
-**Requirements:** `.planning/notes/b2c-strategy.md` (superseding note)
+### Phase 3.5: Monetization — Free Week + Purchase (re-decided + BUILT 2026-07-21)
+**Status:** App side COMPLETE; App Store Connect setup pending (operator)
+**Goal:** Free 7-day trial from first launch, then subscription ($3.99/mo, $19.99/yr) or lifetime unlock ($49.99). Coupon lanes: subscription Offer Codes (3-months-free) + Promo Codes for lifetime. AI-always for everyone with access; no meters. See `.planning/notes/monetization-setup.md` for the ASC runbook.
+**Requirements:** user directives 2026-07-21
 **Depends on:** Phase 3
 
 ### Phase 4: Native Polish Pass

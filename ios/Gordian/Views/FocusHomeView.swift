@@ -33,6 +33,17 @@ struct FocusHomeView: View {
                         .foregroundColor(.textMuted)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 16)
+
+                    if EntitlementManager.shared.isInTrial {
+                        Text("FREE WEEK · \(EntitlementManager.shared.trialDaysRemaining) \(EntitlementManager.shared.trialDaysRemaining == 1 ? "DAY" : "DAYS") LEFT")
+                            .font(.system(size: 10, weight: .bold))
+                            .tracking(1.2)
+                            .foregroundColor(.goldPrimary)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(Capsule().stroke(Color.goldPrimary.opacity(0.4), lineWidth: 1))
+                            .padding(.top, 2)
+                    }
                 }
                 .padding(.vertical, 12)
 

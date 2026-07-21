@@ -27,7 +27,7 @@
 ## Open items (2026-07-21)
 
 - AI-ALWAYS DECISION (user, 2026-07-21): no pre-canned questions ever; proxy retries a fallback model; app shows retry UI instead of the bank.
-- BUSINESS MODEL DECISION (user, 2026-07-21): PAID APP, one-time purchase. No freemium, no weekly meter, no subscription. Resolves the AI-always tension cleanly. Proxy weekly counter = telemetry only; weekly_meter_exhausted permanently dormant. Phase 3.5 rescoped to paid-app setup + promo codes.
+- BUSINESS MODEL (final, user 2026-07-21, supersedes same-day paid-upfront call): FREE download, 7-day full-access trial from first launch, then subscription ($3.99/mo / $19.99/yr) or lifetime unlock ($49.99). Coupons: Offer Codes (3 months free) + Promo Codes (lifetime). BUILT: EntitlementManager + PaywallView + trial pill + Settings membership; ASC setup pending (see notes/monetization-setup.md). No meters; weekly counter stays telemetry-only.
 - Safety lockout shipped: client keyword screen + server SENSITIVE gate → 5-minute lockout with 988 resources. Consider expanding the keyword list and localizing crisis resources before launch.
 
 ## Older open items (2026-07-20)

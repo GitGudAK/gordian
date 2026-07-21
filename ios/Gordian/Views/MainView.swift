@@ -48,7 +48,13 @@ struct MainView: View {
         .onAppear {
             viewModel.modelContext = modelContext
             FollowUpManager.shared.refreshScheduledContent()
+            EntitlementManager.shared.start()
             #if DEBUG
+            if ProcessInfo.processInfo.arguments.contains("-expireTrial") {
+                EntitlementManager.shared.debugExpireTrial()
+            } else if ProcessInfo.processInfo.arguments.contains("-resetTrial") {
+                EntitlementManager.shared.debugResetTrial()
+            }
             if ProcessInfo.processInfo.arguments.contains("-demoLive") {
                 viewModel.startDemoLive()
             } else if ProcessInfo.processInfo.arguments.contains("-demoSession") {
@@ -208,7 +214,13 @@ struct FocusTabView: View {
         Group {
             switch viewModel.focusScreenState {
             case .home:
-                FocusHomeView(viewModel: viewModel, speech: speech)
+                // Trial over + nothing purchased → the paywall replaces home.
+                // A session already in flight (below) always gets to finish.
+                if EntitlementManager.shared.hasAccess {
+                    FocusHomeView(viewModel: viewModel, speech: speech)
+                } else {
+                    PaywallView()
+                }
             case .preparing:
                 PreparingView(viewModel: viewModel)
             case .activeSession:

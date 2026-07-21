@@ -1,0 +1,108 @@
+{
+  "identifier" : "8A1B2C3D-0000-4000-9000-GORDIANSTORE",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+    {
+      "displayPrice" : "49.99",
+      "familyShareable" : false,
+      "internalID" : "C0FFEE00-0001-4000-9000-000000000001",
+      "localizations" : [
+        {
+          "description" : "Unlimited AI sessions, forever. One purchase.",
+          "displayName" : "Gordian Lifetime",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "plus.lifetime",
+      "referenceName" : "Lifetime",
+      "type" : "NonConsumable"
+    }
+  ],
+  "settings" : {
+    "_failTransactionsEnabled" : false,
+    "_locale" : "en_US",
+    "_storefront" : "USA",
+    "_storeKitErrors" : [
+
+    ]
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "C0FFEE00-0002-4000-9000-000000000002",
+      "localizations" : [
+
+      ],
+      "name" : "Gordian Access",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+            {
+              "eligibility" : [
+                "new",
+                "existing",
+                "expired"
+              ],
+              "internalID" : "C0FFEE00-0005-4000-9000-000000000005",
+              "isStackable" : false,
+              "numberOfPeriods" : 3,
+              "paymentMode" : "free",
+              "referenceName" : "three-months-free",
+              "subscriptionPeriod" : "P1M"
+            }
+          ],
+          "displayPrice" : "3.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "C0FFEE00-0003-4000-9000-000000000003",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Unlimited AI sessions.",
+              "displayName" : "Gordian Monthly",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "plus.monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Monthly",
+          "subscriptionGroupID" : "C0FFEE00-0002-4000-9000-000000000002",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "19.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "C0FFEE00-0004-4000-9000-000000000004",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Unlimited AI sessions. Two months free vs monthly.",
+              "displayName" : "Gordian Annual",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "plus.annual",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Annual",
+          "subscriptionGroupID" : "C0FFEE00-0002-4000-9000-000000000002",
+          "type" : "RecurringSubscription"
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 3,
+    "minor" : 0
+  }
+}
