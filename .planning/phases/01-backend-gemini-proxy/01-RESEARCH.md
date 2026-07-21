@@ -528,13 +528,13 @@ GEMINI_API_KEY="<operator's own local/test key>"
 | A5 | Input cap numbers (2,000-char scenario etc.) fit all real app payloads | Rate-limit design | 413-style rejections; verify against app payloads in Phase 3 |
 | A6 | Cloud Run/Deno free-tier details from search summaries (not chosen platform) | Hosting table | None — rejected alternatives |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Custom domain before Phase 3?**
+1. **Custom domain before Phase 3?** — RESOLVED: deferred to user; workers.dev for this phase, decision recorded in 01-02 deploy notes.
    - What we know: `workers.dev` is free and works; the URL gets baked into shipped binaries; some networks filter `workers.dev`.
    - Recommendation: operator buys a domain onto a Cloudflare zone before Phase 3 hardcodes the URL. Not blocking for this phase.
-2. **Exact limit numbers** (6 calls/10 min, 20 sessions/day, 1,500 global/day) are recommendations under Claude's discretion — expose all as Worker vars so tuning never needs a code change; planner should treat the numbers as defaults, not constants.
-3. **Anthropic key at launch or at bake-off?** Adapter ships mock-tested either way; the secret can be set whenever the bake-off starts. Recommendation: defer the key, ship the adapter.
+2. **Exact limit numbers** — RESOLVED: shipped as tunable Worker vars (defaults per recommendation), adopted by plans. (6 calls/10 min, 20 sessions/day, 1,500 global/day) are recommendations under Claude's discretion — expose all as Worker vars so tuning never needs a code change; planner should treat the numbers as defaults, not constants.
+3. **Anthropic key at launch or at bake-off?** — RESOLVED: key deferred; adapter ships mock-tested; bake-off task skips cleanly without it. Adapter ships mock-tested either way; the secret can be set whenever the bake-off starts. Recommendation: defer the key, ship the adapter.
 
 ## Sources
 
