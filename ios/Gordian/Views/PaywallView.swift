@@ -25,7 +25,7 @@ struct PaywallView: View {
                     .foregroundColor(.textLight)
                     .multilineTextAlignment(.center)
 
-                Text("Every session is written by AI for your exact dilemma. Keep untying knots with full access.")
+                Text("Every session is written for your exact dilemma. Keep untying knots with full access.")
                     .font(.system(size: 14))
                     .foregroundColor(.textMuted)
                     .multilineTextAlignment(.center)
