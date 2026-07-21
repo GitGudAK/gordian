@@ -6,7 +6,7 @@
 ## Position
 
 - Milestone: v1 — iOS app on the App Store
-- Current phase: 1 (Backend Gemini Proxy) — planning
+- Current phase: 1 (Backend Gemini Proxy) — BUILT & OFFLINE-VERIFIED (36/36 tests, dry-run deploy OK, wrangler-dev HTTP simulation green). Awaiting ~5 min of operator steps to go live: `wrangler login`, fresh GEMINI_API_KEY via `wrangler secret put`, `wrangler deploy` + live smoke — runbook in `.planning/phases/01-backend-gemini-proxy/01-03-SUMMARY.md`.
 - iOS port: BUILDS AND RUNS — Xcode 16.4 installed 2026-07-20 (Intel Mac → xcodes+aria2 route; App Store Xcode is Apple-Silicon-only). First build: zero errors. Running on iPhone 16 Pro simulator (iOS 18.6). Phase 2 (first build & bring-up) effectively underway.
 
 ## Decisions (locked)
@@ -29,8 +29,8 @@
 - Notification permission on simulator stuck denied — flip in sim Settings app (keeps logs) or reinstall app (wipes logs) to live-test follow-ups/Daily Knot/Weekly Recap.
 - "Not-a-decision" input handling designed, not built: classification gains NOT_A_DECISION (+reframe suggestion) and SENSITIVE (crisis resources, never gamified) modes; offline heuristic; bounce UI on preparing screen.
 - Design tickets #12 (clean knot asset re-export, radius unification) and #13 (VoiceOver pass, symbol weights) partially open; #1–#11 closed.
-- Phase 1 backend proxy: build model-agnostic; bake-off Gemini flash vs Claude Haiku 4.5 (hybrid option: Haiku questions + Sonnet verdict). Also serves guides.json later.
-- Rotate the spike-era Gemini API key before any release.
+- Phase 1 proxy built (see Position). Bake-off tooling ready (`cd proxy && npm run bake-off`) — needs ANTHROPIC_API_KEY (+ GEMINI_API_KEY) in env. guides route reserved (404).
+- Rotate the spike-era Gemini API key NOW — verified still active 2026-07-20. It has been removed from the simulator's UserDefaults; create the fresh key when doing the proxy secret step.
 - Spike verifications still open: 003 speech+RMS `full` run, 004 session feel check (now moot-ish — real app runs).
 
 ## History
