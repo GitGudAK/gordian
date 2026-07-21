@@ -11,8 +11,8 @@ User requirements (2026-07-21): free access for 1 week after download; then char
 operator can gift lifetime access and 3-month access via coupon codes. AI-always stands.
 
 ## In-app (BUILT)
-- `EntitlementManager.swift` (StoreKit 2): products `plus.monthly` ($3.99), `plus.annual`
-  ($19.99), `plus.lifetime` ($49.99, non-consumable). Access = purchase OR in-trial.
+- `EntitlementManager.swift` (StoreKit 2): products `plus.monthly` ($4.99), `plus.annual`
+  ($29.99), `plus.lifetime` ($69.99, non-consumable). Access = purchase OR in-trial.
 - **Trial:** 7 days anchored at first launch (device-side). No purchase or account needed
   to start it; home shows a "FREE WEEK · N DAYS LEFT" pill.
 - **Paywall** replaces the Focus home when trial ends with no purchase. Logs/Guides stay
@@ -32,9 +32,9 @@ operator can gift lifetime access and 3-month access via coupon codes. AI-always
 
 ## App Store Connect runbook (operator, when creating the app record)
 1. App record: free app (price $0) + In-App Purchases.
-2. Subscription group "Gordian Access": plus.monthly $3.99/mo, plus.annual $19.99/yr.
+2. Subscription group "Gordian Access": plus.monthly $4.99/mo, plus.annual $29.99/yr.
    No introductory offer (the free week is handled in-app, pre-purchase).
-3. Non-consumable: plus.lifetime $49.99.
+3. Non-consumable: plus.lifetime $69.99.
 4. Offer code campaign on plus.monthly: "3 months free", free payment mode, 3 periods.
 5. Promo codes for lifetime: generate per version as needed.
 

@@ -59,9 +59,9 @@ no AI mentions anywhere, no em-dashes, self-reflection positioning.
 
 | Reference | Product ID | Type | Price |
 |---|---|---|---|
-| Gordian Monthly | `plus.monthly` | Auto-renewable, group "Gordian Access" | $3.99 |
-| Gordian Annual | `plus.annual` | Auto-renewable, same group, level 1 | $19.99 |
-| Gordian Lifetime | `plus.lifetime` | Non-consumable | $49.99 |
+| Gordian Monthly | `plus.monthly` | Auto-renewable, group "Gordian Access" | $4.99 |
+| Gordian Annual | `plus.annual` | Auto-renewable, same group, level 1 | $29.99 (mark BEST VALUE on paywall) |
+| Gordian Lifetime | `plus.lifetime` | Non-consumable | $69.99 |
 
 No introductory offers (the free week is handled in-app, pre-purchase).
 After the record exists: offer codes on plus.monthly ("3 months free"), promo codes for plus.lifetime.
