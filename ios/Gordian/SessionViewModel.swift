@@ -65,7 +65,10 @@ final class SessionViewModel {
         )
     ]
 
-    private static let fallbackBypassQuestions = [
+    // Offline question bank — 12 are drawn at random per session so repeat
+    // sessions don't feel identical. The Gemini path writes dilemma-specific
+    // questions instead; this is the degradation tier.
+    private static let bypassQuestionBank = [
         "Is your hesitation actually saving you, or stalling you?",
         "If no one was looking, what would your answer be?",
         "Are you choosing out of ambition or fear?",
@@ -77,16 +80,32 @@ final class SessionViewModel {
         "Are you seeking consensus to dilute your own risk?",
         "Is comfort more important to you than growth?",
         "What is the choice you are most afraid of making?",
-        "Will you be thinking about this same problem next year?"
+        "Will you be thinking about this same problem next year?",
+        "If you had to decide in the next ten seconds, what wins?",
+        "Are you waiting for certainty that will never come?",
+        "Would you tell a friend to do this? Then why not you?",
+        "Is the worst case actually survivable?",
+        "Are you protecting your future, or your ego?",
+        "If this fails, will you regret trying?",
+        "Does the safe option secretly bore you?",
+        "Are you deciding, or just delaying the decision?",
+        "Would yes feel like relief or like dread?",
+        "Is fear of judgment doing the choosing?",
+        "What would you do with double the confidence?",
+        "Has your gut already answered this?"
     ]
+
+    private static var fallbackBypassQuestions: [String] {
+        Array(bypassQuestionBank.shuffled().prefix(12))
+    }
 
     var selectedTopic: SimulationTopic
     var activeQuestions: [String]
     var currentQuestionIndex = 0
     var answerMode: AnswerMode = .yesNo
 
-    // Generic either/or questions used when there's no API key for a binary dilemma
-    private static let fallbackBinaryQuestions = [
+    // Generic either/or bank — same random-12 draw as the yes/no bank
+    private static let binaryQuestionBank = [
         "Which one excites you more right now?",
         "Which would you regret never trying?",
         "If both cost the same effort, which one?",
@@ -98,8 +117,20 @@ final class SessionViewModel {
         "Flip a coin — which do you secretly hope for?",
         "Which would your 80-year-old self pick?",
         "Which is the braver choice?",
-        "Which feels like play, not work?"
+        "Which feels like play, not work?",
+        "Which would you defend in an argument?",
+        "Which one scares you in a good way?",
+        "Which did you want before you started weighing?",
+        "Which would you pick with no one to impress?",
+        "Which one has kept you up at night?",
+        "Which future self do you like more?",
+        "Which choice would you make twice?",
+        "Which one is the answer if this were easy?"
     ]
+
+    private static var fallbackBinaryQuestions: [String] {
+        Array(binaryQuestionBank.shuffled().prefix(12))
+    }
 
     // MARK: - Timer
 
@@ -465,6 +496,11 @@ final class SessionViewModel {
     func startDemoSession() {
         dilemmaScenario = "Should I take the startup offer?"
         beginSession(with: Self.fallbackBypassQuestions, mode: .yesNo)
+    }
+
+    // Runs the REAL generation path (Gemini if a key is stored, fallback otherwise)
+    func startDemoLive() {
+        startDilemmaSetup(scenario: "Should I move to Berlin or stay in Austin?")
     }
 
     func startDemoBinary() {

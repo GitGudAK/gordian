@@ -25,6 +25,12 @@
 **Requirements:** REQ-001, REQ-002, REQ-003, REQ-006
 **Depends on:** Phase 1, Phase 2
 
+### Phase 3.5: Monetization
+**Status:** Pending
+**Goal:** Honest freemium: unlimited offline sessions free, 3 AI sessions/week metered, Gordian Plus subscription ($3.99/mo, $19.99/yr via StoreKit 2) unlocks unlimited AI. Paywall never dead-ends a session.
+**Requirements:** REQ-006 (never dead-end) + `.planning/notes/b2c-strategy.md`
+**Depends on:** Phase 3
+
 ### Phase 4: Native Polish Pass
 **Status:** Pending
 **Goal:** The session flow feels flawless: spring animations, Dynamic Type, dark-mode correctness, SF Symbol consistency, touch-target sizing — the "native polish only" bar from the product direction.

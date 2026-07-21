@@ -49,7 +49,9 @@ struct MainView: View {
             viewModel.modelContext = modelContext
             FollowUpManager.shared.refreshScheduledContent()
             #if DEBUG
-            if ProcessInfo.processInfo.arguments.contains("-demoSession") {
+            if ProcessInfo.processInfo.arguments.contains("-demoLive") {
+                viewModel.startDemoLive()
+            } else if ProcessInfo.processInfo.arguments.contains("-demoSession") {
                 viewModel.startDemoSession()
             } else if ProcessInfo.processInfo.arguments.contains("-demoBinary") {
                 viewModel.startDemoBinary()
