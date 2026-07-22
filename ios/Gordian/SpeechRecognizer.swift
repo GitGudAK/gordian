@@ -20,6 +20,7 @@ final class SpeechCoordinator {
     private var request: SFSpeechAudioBufferRecognitionRequest?
     private var task: SFSpeechRecognitionTask?
     private var lastTranscript = ""
+    private var lastError: String?
     private(set) var isListening = false
 
     func startListening() {
@@ -43,7 +44,10 @@ final class SpeechCoordinator {
     private func beginSession() {
         stopListening()
 
-        guard let recognizer = SFSpeechRecognizer(locale: Locale.current), recognizer.isAvailable else {
+        // Current locale, falling back to en-US when the locale has no recognizer
+        let candidate = SFSpeechRecognizer(locale: Locale.current)
+            ?? SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
+        guard let recognizer = candidate, recognizer.isAvailable else {
             onError("Speech recognition not available. Falling back to typing.")
             return
         }
@@ -60,11 +64,12 @@ final class SpeechCoordinator {
 
         let request = SFSpeechAudioBufferRecognitionRequest()
         request.shouldReportPartialResults = true
-        if recognizer.supportsOnDeviceRecognition {
-            request.requiresOnDeviceRecognition = true
-        }
+        // Never REQUIRE on-device recognition: phones report support before the
+        // language model has downloaded, and requiring it then fails instantly.
+        // The system still prefers on-device when the model is present.
         self.request = request
         lastTranscript = ""
+        lastError = nil
 
         task = recognizer.recognitionTask(with: request) { [weak self] result, error in
             Task { @MainActor in
@@ -75,8 +80,9 @@ final class SpeechCoordinator {
                     if result.isFinal {
                         self.finish()
                     }
-                } else if error != nil, self.isListening {
-                    // Deliver whatever we heard rather than surfacing cancellation noise
+                } else if let error, self.isListening {
+                    // Deliver whatever we heard; remember the reason in case it was nothing
+                    self.lastError = error.localizedDescription
                     self.finish()
                 }
             }
@@ -123,7 +129,9 @@ final class SpeechCoordinator {
         let transcript = lastTranscript
         teardown()
         if transcript.isEmpty {
-            onError("No speech recognized")
+            // Surface the real cause when there is one — a generic message hides
+            // actionable problems (disabled dictation, missing model, network)
+            onError(lastError.map { "Speech failed: \($0)" } ?? "No speech recognized")
         } else {
             onResult(transcript)
         }

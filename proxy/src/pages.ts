@@ -95,7 +95,7 @@ export function privacyPage(): Response {
 <h2>The device identifier</h2>
 <p>The app generates a random identifier on first launch. It is not linked to your identity, contacts, location, or any advertising system, and is used only to apply fair-use rate limits.</p>
 <h2>Voice input</h2>
-<p>If you use voice, speech is transcribed on-device by Apple's speech recognition. Audio never reaches our servers; only the resulting text, if you submit it with an answer.</p>
+<p>If you use voice, speech is transcribed by Apple's speech recognition, on your device when its language model is available and otherwise by Apple's dictation service under Apple's privacy terms. Audio never reaches Gordian's servers; only the resulting text, if you submit it with an answer.</p>
 <h2>Purchases</h2>
 <p>Subscriptions and purchases are processed entirely by Apple. We receive no payment details.</p>
 <h2>Third parties</h2>
