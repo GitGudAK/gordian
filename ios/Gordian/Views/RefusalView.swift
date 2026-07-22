@@ -49,6 +49,15 @@ struct RefusalView: View {
                     .background(Capsule().fill(Color.goldPrimary))
             }
 
+            if viewModel.refusalIsSelfHarm {
+                Text("If any part of this involves harming yourself, you deserve real support right now. In the US, call or text 988.")
+                    .font(.system(size: 12))
+                    .foregroundColor(.textMuted)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, 12)
+            }
+
             Spacer()
             Spacer()
         }

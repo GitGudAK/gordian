@@ -188,6 +188,7 @@ final class SessionViewModel {
         preparingFailed = false
         notADecision = false
         suggestedReframe = ""
+        refusalIsSelfHarm = false
         focusScreenState = .home
     }
 
@@ -215,10 +216,15 @@ final class SessionViewModel {
         UserDefaults.standard.integer(forKey: Self.lockoutStrikesKey)
     }
 
+    /// True when the refusal was for self-harm content (adds the 988 line).
+    var refusalIsSelfHarm = false
+
     /// Mirrors the server's lockout state locally and shows the right screen.
     func applyServerSafety(risk: String?, lockout: ProxyLockout?) {
         if risk == "self_harm" {
-            focusScreenState = .crisis
+            // No strike, no lockout: a refusal with a support line
+            refusalIsSelfHarm = true
+            focusScreenState = .refused
             return
         }
         if let lockout {
@@ -266,9 +272,11 @@ final class SessionViewModel {
             return
         }
         if isCrisisPhrase(scenario) {
-            focusScreenState = .crisis
+            refusalIsSelfHarm = true
+            focusScreenState = .refused
             return
         }
+        refusalIsSelfHarm = false
         dilemmaScenario = scenario
         rapidFireAnswers = []
         confrontedProbe = ""

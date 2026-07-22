@@ -343,8 +343,6 @@ struct FocusTabView: View {
                 LockoutView(viewModel: viewModel)
             case .tooBig:
                 TooBigView(viewModel: viewModel)
-            case .crisis:
-                CrisisView(viewModel: viewModel)
             case .refused:
                 RefusalView(viewModel: viewModel)
             }
