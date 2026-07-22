@@ -1,12 +1,42 @@
 // HOME state — port of FocusTabScreen's hero + scenario entry + CTA
 
 import SwiftUI
+import Combine
+
+// Publishes the keyboard's current height. The root layout ignores the
+// keyboard (so the nav bar stays put); scrollable screens use this to inset
+// their content, making everything reachable above the keyboard by scrolling.
+@MainActor
+final class KeyboardObserver: ObservableObject {
+    @Published var height: CGFloat = 0
+    private var cancellables: Set<AnyCancellable> = []
+
+    init() {
+        NotificationCenter.default.publisher(for: UIResponder.keyboardWillChangeFrameNotification)
+            .merge(with: NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification))
+            .receive(on: RunLoop.main)
+            .sink { [weak self] note in
+                guard let self else { return }
+                if note.name == UIResponder.keyboardWillHideNotification {
+                    withAnimation(.easeOut(duration: 0.25)) { self.height = 0 }
+                    return
+                }
+                if let frame = note.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect {
+                    let screen = UIScreen.main.bounds.height
+                    let overlap = max(0, screen - frame.origin.y)
+                    withAnimation(.easeOut(duration: 0.25)) { self.height = overlap }
+                }
+            }
+            .store(in: &cancellables)
+    }
+}
 
 struct FocusHomeView: View {
     var viewModel: SessionViewModel
     var speech: SpeechCoordinator
     @State private var textInput = ""
     @FocusState private var fieldFocused: Bool
+    @StateObject private var keyboard = KeyboardObserver()
 
     var body: some View {
         ScrollView {
@@ -128,7 +158,10 @@ struct FocusHomeView: View {
             }
             .padding(.horizontal, 24)
             .padding(.top, 12)
-            .padding(.bottom, 24)
+            // When the keyboard is up, its height becomes scrollable inset so
+            // the field bottom and CTA can be scrolled above it (the root
+            // layout ignores the keyboard to keep the nav bar anchored)
+            .padding(.bottom, 24 + keyboard.height)
         }
         .scrollDismissesKeyboard(.interactively)
         .scrollBounceBehavior(.basedOnSize)
