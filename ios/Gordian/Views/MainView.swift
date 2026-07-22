@@ -143,16 +143,51 @@ struct HeaderView: View {
     }
 }
 
-// Membership status chip for the Guides header: shiny gold for Premium,
-// outlined gold during the free week, muted after it ends
+// Slow specular sweep across a gold surface — one soft highlight crossing
+// every few seconds, clipped to the capsule
+struct GoldSheen: ViewModifier {
+    @State private var phase: CGFloat = -2.0
+
+    func body(content: Content) -> some View {
+        content
+            .overlay(
+                GeometryReader { geo in
+                    LinearGradient(
+                        colors: [.clear, .white.opacity(0.4), .clear],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                    .frame(width: geo.size.width * 0.5)
+                    .offset(x: phase * geo.size.width)
+                    .blendMode(.plusLighter)
+                }
+                .allowsHitTesting(false)
+            )
+            .clipShape(Capsule())
+            .onAppear {
+                withAnimation(.linear(duration: 4.0).repeatForever(autoreverses: false)) {
+                    phase = 2.0
+                }
+            }
+    }
+}
+
+// Membership status chip: shiny gold LIFETIME (mini knot mark — the interlocked
+// diamonds read as infinity) or PREMIUM (sparkles); outlined gold during the
+// free week; muted after it ends
 struct MembershipChip: View {
     var body: some View {
         let entitlements = EntitlementManager.shared
         if entitlements.isPurchased {
             HStack(spacing: 6) {
-                Image(systemName: "sparkles")
-                    .font(.system(size: 11, weight: .bold))
-                Text("PREMIUM")
+                if entitlements.hasLifetime {
+                    KnotGlyph(color: .black)
+                        .frame(width: 16, height: 16)
+                } else {
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 11, weight: .bold))
+                }
+                Text(entitlements.hasLifetime ? "LIFETIME" : "PREMIUM")
                     .font(.system(size: 11, weight: .heavy))
                     .tracking(2)
             }
@@ -165,6 +200,7 @@ struct MembershipChip: View {
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing))
             )
+            .modifier(GoldSheen())
             .shadow(color: Color.goldPrimary.opacity(0.35), radius: 10, y: 2)
         } else if entitlements.isInTrial {
             let days = entitlements.trialDaysRemaining

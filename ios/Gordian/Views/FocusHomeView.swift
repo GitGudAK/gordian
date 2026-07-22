@@ -25,7 +25,11 @@ struct FocusHomeView: View {
                         .font(.system(size: 13))
                         .foregroundColor(.textMuted)
 
-                    if EntitlementManager.shared.isInTrial {
+                    // Status in the hero: trial countdown, or the earned badge
+                    if EntitlementManager.shared.isPurchased {
+                        MembershipChip()
+                            .padding(.top, 4)
+                    } else if EntitlementManager.shared.isInTrial {
                         Text("FREE WEEK · \(EntitlementManager.shared.trialDaysRemaining) \(EntitlementManager.shared.trialDaysRemaining == 1 ? "DAY" : "DAYS") LEFT")
                             .font(.system(size: 10, weight: .bold))
                             .tracking(1.2)
