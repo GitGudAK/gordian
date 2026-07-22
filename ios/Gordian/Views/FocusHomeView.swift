@@ -165,6 +165,11 @@ struct FocusHomeView: View {
         }
         .scrollDismissesKeyboard(.interactively)
         .scrollBounceBehavior(.basedOnSize)
+        // Tapping anywhere outside the field drops the keyboard, revealing
+        // the CTA (buttons and the field keep their own tap precedence)
+        .onTapGesture {
+            fieldFocused = false
+        }
         .onReceive(NotificationCenter.default.publisher(for: .speechDilemmaResult)) { note in
             if let result = note.object as? String {
                 textInput = result
