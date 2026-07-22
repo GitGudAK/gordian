@@ -62,6 +62,18 @@ struct EdgeFadeMask: ViewModifier {
     }
 }
 
+// Small deco diamond used as a section mark (replaces SF symbol icons)
+struct DecoMark: View {
+    var color: Color = .goldPrimary
+
+    var body: some View {
+        Rectangle()
+            .fill(color)
+            .frame(width: 7, height: 7)
+            .rotationEffect(.degrees(45))
+    }
+}
+
 // Art Deco divider: rule — diamond triplet — rule (the support page's baseline motif)
 struct DecoDivider: View {
     var color: Color = .goldPrimary
@@ -153,14 +165,34 @@ struct VerdictView: View {
                         .background(RoundedRectangle(cornerRadius: 16).fill(Color.darkSurfaceVariant.opacity(0.3)))
 
                         if !viewModel.confrontedProbe.isEmpty {
-                            VStack(alignment: .leading, spacing: 4) {
-                                SectionLabel(text: "NEXT STEP", size: 10, tracking: 1)
+                            VStack(alignment: .leading, spacing: 6) {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "arrow.forward.circle.fill")
+                                        .font(.system(size: 13))
+                                        .foregroundColor(.goldPrimary)
+                                    SectionLabel(text: "NEXT STEP", size: 10, tracking: 1)
+                                }
                                 Text(viewModel.confrontedProbe)
                                     .font(.subheadline.weight(.semibold))
                                     .foregroundColor(.white)
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(16)
+                            .background(RoundedRectangle(cornerRadius: 16).fill(Color.darkSurfaceVariant.opacity(0.3)))
                         }
+
+                        // Disclaimer closes the card itself, set off by the deco divider
+                        VStack(spacing: 10) {
+                            DecoDivider()
+                                .padding(.horizontal, 24)
+                            Text("Gordian is a self-reflection exercise. This verdict mirrors your own answers and is not medical, legal, financial, or professional advice. For decisions with serious consequences, consult a qualified professional.")
+                                .font(.system(size: 11))
+                                .lineSpacing(4)
+                                .foregroundColor(.textMuted)
+                                .multilineTextAlignment(.center)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .padding(.top, 6)
                     }
                 }
                 .padding(24)
@@ -202,19 +234,6 @@ struct VerdictView: View {
                         }
                     }
 
-                    // Disclaimer — the scroll's formal close, set off by a deco divider
-                    VStack(spacing: 14) {
-                        DecoDivider()
-                            .padding(.horizontal, 30)
-                        Text("Gordian is a self-reflection exercise. This verdict mirrors your own answers and is not medical, legal, financial, or professional advice. For decisions with serious consequences, consult a qualified professional.")
-                            .font(.system(size: 12))
-                            .lineSpacing(5)
-                            .foregroundColor(.textLight.opacity(0.75))
-                            .multilineTextAlignment(.center)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .padding(.horizontal, 8)
-                    }
-                    .padding(.top, 14)
                 }
             }
                 .padding(.horizontal, 24)
