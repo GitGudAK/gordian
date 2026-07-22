@@ -79,9 +79,21 @@ final class EntitlementManager {
             default: break
             }
         }
+        #if DEBUG
+        // -grantLifetime / -revokeLifetime tooling: simctl launches can't
+        // complete StoreKit purchases, so testing entitled states needs this
+        if UserDefaults.standard.bool(forKey: "gordian_debug_lifetime") { lifetime = true }
+        #endif
         hasSubscription = subscription
         hasLifetime = lifetime
     }
+
+    #if DEBUG
+    func debugSetLifetime(_ granted: Bool) {
+        UserDefaults.standard.set(granted, forKey: "gordian_debug_lifetime")
+        Task { await refreshEntitlements() }
+    }
+    #endif
 
     func loadProducts() async {
         let ids = [Self.monthlyID, Self.annualID, Self.lifetimeID]

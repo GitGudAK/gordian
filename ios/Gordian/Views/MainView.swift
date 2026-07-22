@@ -64,6 +64,11 @@ struct MainView: View {
             } else if ProcessInfo.processInfo.arguments.contains("-resetTrial") {
                 EntitlementManager.shared.debugResetTrial()
             }
+            if ProcessInfo.processInfo.arguments.contains("-grantLifetime") {
+                EntitlementManager.shared.debugSetLifetime(true)
+            } else if ProcessInfo.processInfo.arguments.contains("-revokeLifetime") {
+                EntitlementManager.shared.debugSetLifetime(false)
+            }
             if ProcessInfo.processInfo.arguments.contains("-demoLive") {
                 viewModel.startDemoLive()
             } else if ProcessInfo.processInfo.arguments.contains("-demoSession") {
