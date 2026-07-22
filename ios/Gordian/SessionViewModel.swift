@@ -232,15 +232,24 @@ final class SessionViewModel {
 
     // Instant client-side screen for clearly dangerous phrasing; the proxy's
     // model-level safety gate (mode=SENSITIVE) catches what keywords miss.
+    // WORD-BOUNDARY matched: plain substring matching locked users out for
+    // "stab" inside "stable company" (real field report).
     private static let dangerTerms = [
         "kill", "hurt", "harm", "suicide", "end my life", "end it all",
         "weapon", "gun", "knife", "attack", "revenge", "stab", "shoot",
         "beat up", "burn down", "poison", "overdose", "steal", "rob"
     ]
 
+    private static let dangerPatterns: [NSRegularExpression] = dangerTerms.compactMap {
+        try? NSRegularExpression(
+            pattern: "\\b" + NSRegularExpression.escapedPattern(for: $0) + "\\b",
+            options: [.caseInsensitive]
+        )
+    }
+
     private func isDangerous(_ scenario: String) -> Bool {
-        let lower = scenario.lowercased()
-        return Self.dangerTerms.contains { lower.contains($0) }
+        let range = NSRange(scenario.startIndex..., in: scenario)
+        return Self.dangerPatterns.contains { $0.firstMatch(in: scenario, options: [], range: range) != nil }
     }
 
     // MARK: - Dilemma setup
