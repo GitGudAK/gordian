@@ -191,12 +191,14 @@ final class SessionViewModel {
         focusScreenState = .home
     }
 
-    // MARK: - Safety lockout (dangerous dilemmas → 5-minute pause)
+    // MARK: - Graduated safety (server-authoritative)
+    // The proxy's semantic gate classifies risk. self_harm → crisis resources,
+    // never punished. harm_others/illegal → refusal first, then server-side
+    // escalating lockout (strikes survive reinstall). The values below mirror
+    // the server's state so the lock UI works offline.
 
     private static let lockoutKey = "gordian_lockout_until"
     private static let lockoutStrikesKey = "gordian_lockout_strikes"
-    // Escalation: 5 minutes, then 30 minutes, then a full day per attempt.
-    static let lockoutDurations: [TimeInterval] = [5 * 60, 30 * 60, 24 * 60 * 60]
 
     var lockoutUntil: Date? {
         let t = UserDefaults.standard.double(forKey: Self.lockoutKey)
@@ -208,18 +210,26 @@ final class SessionViewModel {
         return until > Date()
     }
 
-    /// How many times the safety gate has fired on this install.
+    /// Server-reported strike count (mirrored for lock-screen copy).
     var lockoutStrikes: Int {
         UserDefaults.standard.integer(forKey: Self.lockoutStrikesKey)
     }
 
-    func triggerLockout() {
-        let strikes = lockoutStrikes
-        let duration = Self.lockoutDurations[min(strikes, Self.lockoutDurations.count - 1)]
-        UserDefaults.standard.set(strikes + 1, forKey: Self.lockoutStrikesKey)
-        UserDefaults.standard.set(Date().addingTimeInterval(duration).timeIntervalSince1970,
-                                  forKey: Self.lockoutKey)
-        focusScreenState = .lockedOut
+    /// Mirrors the server's lockout state locally and shows the right screen.
+    func applyServerSafety(risk: String?, lockout: ProxyLockout?) {
+        if risk == "self_harm" {
+            focusScreenState = .crisis
+            return
+        }
+        if let lockout {
+            UserDefaults.standard.set(lockout.strikes, forKey: Self.lockoutStrikesKey)
+            if lockout.until / 1000 > Date().timeIntervalSince1970 {
+                UserDefaults.standard.set(lockout.until / 1000, forKey: Self.lockoutKey)
+                focusScreenState = .lockedOut
+                return
+            }
+        }
+        focusScreenState = .refused
     }
 
     func clearLockoutIfExpired() {
@@ -230,26 +240,22 @@ final class SessionViewModel {
         focusScreenState = .home
     }
 
-    // Instant client-side screen for clearly dangerous phrasing; the proxy's
-    // model-level safety gate (mode=SENSITIVE) catches what keywords miss.
-    // WORD-BOUNDARY matched: plain substring matching locked users out for
-    // "stab" inside "stable company" (real field report).
-    private static let dangerTerms = [
-        "kill", "hurt", "harm", "suicide", "end my life", "end it all",
-        "weapon", "gun", "knife", "attack", "revenge", "stab", "shoot",
-        "beat up", "burn down", "poison", "overdose", "steal", "rob"
-    ]
-
-    private static let dangerPatterns: [NSRegularExpression] = dangerTerms.compactMap {
+    // The ONLY client-side text screen: unambiguous crisis phrases, shown
+    // support immediately without a round-trip. Never locks, never strikes.
+    // Everything else is judged semantically by the server gate.
+    private static let crisisPatterns: [NSRegularExpression] = [
+        "kill myself", "suicide", "end my life", "end it all",
+        "hurt myself", "harm myself", "self harm", "self-harm", "want to die"
+    ].compactMap {
         try? NSRegularExpression(
             pattern: "\\b" + NSRegularExpression.escapedPattern(for: $0) + "\\b",
             options: [.caseInsensitive]
         )
     }
 
-    private func isDangerous(_ scenario: String) -> Bool {
+    private func isCrisisPhrase(_ scenario: String) -> Bool {
         let range = NSRange(scenario.startIndex..., in: scenario)
-        return Self.dangerPatterns.contains { $0.firstMatch(in: scenario, options: [], range: range) != nil }
+        return Self.crisisPatterns.contains { $0.firstMatch(in: scenario, options: [], range: range) != nil }
     }
 
     // MARK: - Dilemma setup
@@ -259,8 +265,8 @@ final class SessionViewModel {
             focusScreenState = .lockedOut
             return
         }
-        if isDangerous(scenario) {
-            triggerLockout()
+        if isCrisisPhrase(scenario) {
+            focusScreenState = .crisis
             return
         }
         dilemmaScenario = scenario
@@ -307,8 +313,8 @@ final class SessionViewModel {
             do {
                 // Prompts, classification, and the safety gate live server-side.
                 let plan = try await proxy.sessionPlan(scenario: scenario)
-                if plan.mode.uppercased() == "SENSITIVE" {
-                    triggerLockout()
+                if plan.mode.uppercased() == "SENSITIVE" || plan.mode.uppercased() == "LOCKED" {
+                    applyServerSafety(risk: plan.risk, lockout: plan.lockout)
                     return
                 }
                 if plan.mode.uppercased() == "NOT_A_DECISION" {
@@ -549,10 +555,15 @@ final class SessionViewModel {
         startDilemmaSetup(scenario: "Should I sell my company, move my family to Portugal, and have another kid?")
     }
 
-    // Exercises the safety lockout (client keyword screen fires before any network)
-    func startDemoSensitive() {
+    // Exercises the crisis path (client phrase screen, no network, no punishment)
+    func startDemoCrisis() {
+        startDilemmaSetup(scenario: "I want to end my life")
+    }
+
+    // Exercises the refusal/strike path via the real proxy round-trip
+    func startDemoRefused() {
         UserDefaults.standard.removeObject(forKey: Self.lockoutKey)
-        startDilemmaSetup(scenario: "Should I hurt my neighbor to get revenge?")
+        startDilemmaSetup(scenario: "Should I slash my roommates tires for revenge?")
     }
 
     func startDemoVerdict() {

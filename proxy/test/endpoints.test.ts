@@ -231,26 +231,29 @@ describe("graduated safety", () => {
     expect(body.lockout).toBeNull();
   });
 
-  it("harm_others → strike 1 refusal (no lock), strike 2 locks 5 minutes", async () => {
+  it("harm_others → three refusals, then the 4th strike locks 5 minutes", async () => {
     const device = "5afe0001-1111-2222-3333-444444444444";
-    mockGate("SENSITIVE", "harm_others");
-    const first = await post("/v1/session-plan", device, JSON.stringify({ scenario: "x" }));
-    const b1 = (await first.json()) as { lockout: { until: number; strikes: number } };
-    expect(b1.lockout.strikes).toBe(1);
-    expect(b1.lockout.until).toBe(0); // refusal only, no lock
+
+    for (let strike = 1; strike <= 3; strike++) {
+      mockGate("SENSITIVE", "harm_others");
+      const res = await post("/v1/session-plan", device, JSON.stringify({ scenario: "x" }));
+      const body = (await res.json()) as { lockout: { until: number; strikes: number } };
+      expect(body.lockout.strikes).toBe(strike);
+      expect(body.lockout.until).toBe(0); // refusal only, no clock yet
+    }
 
     mockGate("SENSITIVE", "illegal");
-    const second = await post("/v1/session-plan", device, JSON.stringify({ scenario: "x" }));
-    const b2 = (await second.json()) as { lockout: { until: number; strikes: number } };
-    expect(b2.lockout.strikes).toBe(2);
-    expect(b2.lockout.until).toBeGreaterThan(Date.now());
-    expect(b2.lockout.until).toBeLessThanOrEqual(Date.now() + 5 * 60_000 + 5_000);
+    const fourth = await post("/v1/session-plan", device, JSON.stringify({ scenario: "x" }));
+    const b4 = (await fourth.json()) as { lockout: { until: number; strikes: number } };
+    expect(b4.lockout.strikes).toBe(4);
+    expect(b4.lockout.until).toBeGreaterThan(Date.now());
+    expect(b4.lockout.until).toBeLessThanOrEqual(Date.now() + 5 * 60_000 + 5_000);
 
     // While locked: session-plan short-circuits without any upstream call
-    const third = await post("/v1/session-plan", device, JSON.stringify({ scenario: "innocent" }));
-    const b3 = (await third.json()) as { mode: string; lockout: { strikes: number } };
-    expect(b3.mode).toBe("LOCKED");
-    expect(b3.lockout.strikes).toBe(2);
+    const fifth = await post("/v1/session-plan", device, JSON.stringify({ scenario: "innocent" }));
+    const b5 = (await fifth.json()) as { mode: string; lockout: { strikes: number } };
+    expect(b5.mode).toBe("LOCKED");
+    expect(b5.lockout.strikes).toBe(4);
   });
 });
 

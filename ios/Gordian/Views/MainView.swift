@@ -77,8 +77,10 @@ struct MainView: View {
                 viewModel.startDemoBinary()
             } else if ProcessInfo.processInfo.arguments.contains("-demoVerdict") {
                 viewModel.startDemoVerdict()
-            } else if ProcessInfo.processInfo.arguments.contains("-demoSensitive") {
-                viewModel.startDemoSensitive()
+            } else if ProcessInfo.processInfo.arguments.contains("-demoCrisis") {
+                viewModel.startDemoCrisis()
+            } else if ProcessInfo.processInfo.arguments.contains("-demoRefused") {
+                viewModel.startDemoRefused()
             } else if ProcessInfo.processInfo.arguments.contains("-demoTooBig") {
                 viewModel.startDemoTooBig()
             } else if ProcessInfo.processInfo.arguments.contains("-demoNonQuestion") {
@@ -341,6 +343,10 @@ struct FocusTabView: View {
                 LockoutView(viewModel: viewModel)
             case .tooBig:
                 TooBigView(viewModel: viewModel)
+            case .crisis:
+                CrisisView(viewModel: viewModel)
+            case .refused:
+                RefusalView(viewModel: viewModel)
             }
         }
         .onAppear { configureSpeech() }

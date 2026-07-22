@@ -22,9 +22,9 @@ export interface SafetyState {
   strikes: number;
 }
 
-// Strike ladder: 1st = refusal only, 2nd = 5 min, 3rd = 30 min, 4th+ = 24 h.
-// Strikes decay after 7 clean days.
-const SAFETY_DELAYS_MS = [0, 5 * 60_000, 30 * 60_000, 24 * 60 * 60_000];
+// Strike ladder: three refusals first, then the clocks — 4th = 5 min,
+// 5th = 30 min, 6th+ = 24 h. Strikes decay after 7 clean days.
+const SAFETY_DELAYS_MS = [0, 0, 0, 5 * 60_000, 30 * 60_000, 24 * 60 * 60_000];
 const SAFETY_DECAY_MS = 7 * 24 * 60 * 60_000;
 
 /** ISO-8601 week key, UTC, e.g. "2026-W29". Handles year-boundary weeks (Thursday rule). */

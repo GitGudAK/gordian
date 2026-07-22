@@ -110,12 +110,13 @@ struct LockoutView: View {
         }
     }
 
-    // Honest escalation copy: matches what triggerLockout actually enforces.
+    // Honest escalation copy: matches the server's strike ladder
+    // (three refusals, then 5 min, 30 min, 24 h).
     private var escalationWarning: String {
         switch viewModel.lockoutStrikes {
-        case 0, 1:
-            return "Repeated attempts will lock sessions for 30 minutes, then a full day."
-        case 2:
+        case ..<5:
+            return "Another attempt will lock sessions for 30 minutes, then a full day."
+        case 5:
             return "Another attempt will lock sessions for a full day."
         default:
             return "Repeated attempts keep sessions locked for a full day at a time."

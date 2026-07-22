@@ -6,11 +6,18 @@
 
 import Foundation
 
+struct ProxyLockout: Decodable {
+    let until: Double // epoch milliseconds; 0 = no lock (refusal only)
+    let strikes: Int
+}
+
 struct ProxySessionPlan: Decodable {
     let mode: String
     let optionA: String
     let optionB: String
     let questions: [String]
+    let risk: String?
+    let lockout: ProxyLockout?
 }
 
 struct ProxyVerdict: Decodable {

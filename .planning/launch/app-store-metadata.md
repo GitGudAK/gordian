@@ -87,7 +87,7 @@ crisis-resources line is supportive, not descriptive).
 >
 > To test a session: type any two-option dilemma (e.g. "Should I learn Spanish or German?") and tap Untie My Knot. Question generation takes 5-10 seconds.
 >
-> Safety behavior: dilemmas describing harm to self or others are refused and the app pauses new sessions for 5 minutes with crisis resources (US 988). Test with "Should I hurt my neighbor?" if desired.
+> Safety behavior: dilemmas about harming others are refused with a warning (repeated attempts pause sessions server-side: three warnings, then 5 min / 30 min / 24 h). Dilemmas involving self-harm show crisis resources (US 988 call/text buttons) with no penalty. Test with "Should I slash my neighbor's tires?" if desired.
 >
 > The notification prompt appears only after the first completed verdict (used for optional follow-up reminders). Microphone/speech are optional, used for spoken reflections, transcribed on-device.
 
