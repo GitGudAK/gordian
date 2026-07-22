@@ -39,6 +39,11 @@ struct MainView: View {
             // dim + system spinner. Removed: each screen presents its own
             // considered loading state.)
         }
+        // The keyboard must not compress the layout: without this, the bottom
+        // nav rides up over the keyboard and halves the visible typing area.
+        // The keyboard simply covers the nav; the dilemma field keeps its own
+        // scroll-based avoidance, and the Go key submits.
+        .ignoresSafeArea(.keyboard, edges: .bottom)
         .sheet(isPresented: $showRedeemDemo) {
             RedeemCodeView()
         }
