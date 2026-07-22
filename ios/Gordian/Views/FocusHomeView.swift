@@ -165,29 +165,6 @@ struct FocusHomeView: View {
         }
         .scrollDismissesKeyboard(.interactively)
         .scrollBounceBehavior(.basedOnSize)
-        // The primary action must never hide behind the keyboard: while
-        // typing with text present, it floats right above the keys
-        .overlay(alignment: .bottom) {
-            if keyboard.height > 0 && !textInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                Button(action: startSetup) {
-                    Text("Untie my knot")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(.black)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 50)
-                        .background(
-                            Capsule().fill(LinearGradient(
-                                colors: [.goldAccent, .goldPrimary],
-                                startPoint: .top,
-                                endPoint: .bottom))
-                        )
-                        .shadow(color: Color.black.opacity(0.5), radius: 14, y: 4)
-                }
-                .padding(.horizontal, 24)
-                .padding(.bottom, keyboard.height + 10)
-                .transition(.opacity)
-            }
-        }
         .onReceive(NotificationCenter.default.publisher(for: .speechDilemmaResult)) { note in
             if let result = note.object as? String {
                 textInput = result
@@ -196,6 +173,18 @@ struct FocusHomeView: View {
         .onReceive(NotificationCenter.default.publisher(for: .focusDilemmaField)) { _ in
             fieldFocused = true
         }
+        #if DEBUG
+        // -typingDemo: screenshot tooling — prefill and focus so the keyboard
+        // state (floating CTA) can be captured headlessly
+        .onAppear {
+            if ProcessInfo.processInfo.arguments.contains("-typingDemo") {
+                textInput = "Should I take the new job or stay where I am?"
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                    fieldFocused = true
+                }
+            }
+        }
+        #endif
     }
 
     private func startSetup() {
