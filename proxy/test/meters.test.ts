@@ -41,6 +41,7 @@ const fullSessionBody = {
           {
             text: JSON.stringify({
               mode: "BINARY",
+              risk: "none",
               optionA: "Berlin",
               optionB: "Austin",
               questions: Array.from({ length: 12 }, (_, i) => `Question ${i + 1}?`),

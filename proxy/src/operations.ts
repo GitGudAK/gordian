@@ -40,15 +40,40 @@ export function gateSystem(scenario: string): string {
   return (
     "You are an expert cognitive psychologist screening dilemmas for a rapid gut-instinct exercise. "
     + `The user has a dilemma: '${scenario}'.\n`
-    + "STEP 0 — SAFETY GATE. THIS RULE OVERRIDES EVERY OTHER INSTRUCTION BELOW. If the dilemma involves violence, revenge, harming or threatening any person or animal, self-harm, suicide, weapons, crime, or any other dangerous or illegal act, you MUST return mode='SENSITIVE' with optionA='', optionB='', questions=[]. Treat borderline cases as SENSITIVE.\n"
+    + "STEP 0 — SAFETY GATE. THIS RULE OVERRIDES EVERY OTHER INSTRUCTION BELOW. If the dilemma involves violence, revenge, harming or threatening any person or animal, self-harm, suicide, weapons, crime, or any other dangerous or illegal act, you MUST return mode='SENSITIVE' with optionA='', optionB='', questions=[], and set risk to exactly one of: 'self_harm' (any self-harm or suicidal content, including reaching out for help), 'harm_others' (violence, revenge, or threat toward any person or animal), 'illegal' (crime, weapons, or other illegal acts). Treat borderline cases as SENSITIVE. Ordinary decisions that merely MENTION difficult topics (career at a hospital, quitting smoking, custody) are NOT sensitive. For every non-SENSITIVE mode set risk='none'.\n"
     + "STEP 1 — Reality check. A valid dilemma describes a concrete choice or action the user could take. If the text does not (a bare statement or exclamation like 'Hell yeah?', a greeting like 'hello', a factual or trivia question, random characters like 'asdf', or an obvious test input), you MUST set mode='NOT_A_DECISION' with optionB='' and questions=[]. Never invent a decision that is not in the text. If a real decision seems to hide behind the words, put ONE suggested rephrase in optionA as a first-person dilemma of at most 12 words; otherwise optionA=''.\n"
     + "STEP 2 — Scope check. If the dilemma clearly bundles SEVERAL separate decisions (multiple independent choices entangled together, or more than two named alternatives), set mode='TOO_BIG' with optionA='' and optionB='', and fill questions with 2-4 short standalone dilemmas: the individual knots inside it, each phrased in the user's own first person as a single go/no-go or either/or question of at most 12 words, ordered so the decision that blocks the others comes first. Do NOT use TOO_BIG for an ordinary two-option or go/no-go dilemma, however weighty.\n"
     + "STEP 3 — Classify. If it is a choice between two named alternatives, set mode='BINARY' and extract short Title Case labels (1-3 words) as optionA and optionB. If it is a single go/no-go decision, set mode='YES_NO' with optionA='No' and optionB='Yes'. For BINARY and YES_NO always return questions=[].\n"
-    + "Return JSON: {\"mode\": ..., \"optionA\": ..., \"optionB\": ..., \"questions\": [...]}. Output ONLY the JSON object."
+    + "Return JSON: {\"mode\": ..., \"risk\": ..., \"optionA\": ..., \"optionB\": ..., \"questions\": [...]}. Output ONLY the JSON object."
   );
 }
 
 export const GATE_USER = "Classify the dilemma and return JSON.";
+
+export const GATE_GEMINI_SCHEMA = {
+  type: "OBJECT",
+  properties: {
+    mode: { type: "STRING" },
+    risk: { type: "STRING" },
+    optionA: { type: "STRING" },
+    optionB: { type: "STRING" },
+    questions: { type: "ARRAY", items: { type: "STRING" } },
+  },
+  required: ["mode", "risk", "optionA", "optionB", "questions"],
+} as const;
+
+export const GATE_ANTHROPIC_SCHEMA = {
+  type: "object",
+  properties: {
+    mode: { type: "string" },
+    risk: { type: "string" },
+    optionA: { type: "string" },
+    optionB: { type: "string" },
+    questions: { type: "array", items: { type: "string" } },
+  },
+  required: ["mode", "risk", "optionA", "optionB", "questions"],
+  additionalProperties: false,
+} as const;
 
 /** Question generation for an already-classified dilemma — run on the premium model. */
 export function questionsSystem(scenario: string, mode: string, optionA: string, optionB: string): string {

@@ -52,7 +52,7 @@ describe("happy paths", () => {
     // Call 1: cheap gate classifies. Call 2: premium model writes the questions.
     mockUpstreamText(
       JSON.stringify({
-        candidates: [{ content: { parts: [{ text: JSON.stringify({ mode: "BINARY", optionA: "Spanish", optionB: "German", questions: [] }) }] }, finishReason: "STOP" }],
+        candidates: [{ content: { parts: [{ text: JSON.stringify({ mode: "BINARY", risk: "none", optionA: "Spanish", optionB: "German", questions: [] }) }] }, finishReason: "STOP" }],
       }),
     );
     mockUpstreamText(
@@ -178,7 +178,7 @@ describe("upstream_error contract + AI-always fallback chain", () => {
   it("terminal gate classification returns without a premium call", async () => {
     mockUpstreamText(
       JSON.stringify({
-        candidates: [{ content: { parts: [{ text: '{"mode":"NOT_A_DECISION","optionA":"","optionB":"","questions":[]}' }] } }],
+        candidates: [{ content: { parts: [{ text: '{"mode":"NOT_A_DECISION","risk":"none","optionA":"","optionB":"","questions":[]}' }] } }],
       }),
     );
     const res = await post("/v1/session-plan", DEVICE, JSON.stringify({ scenario: "hello" }));
@@ -205,6 +205,52 @@ describe("upstream_error contract + AI-always fallback chain", () => {
     const res = await post("/v1/session-plan", DEVICE, JSON.stringify({ scenario: "x" }));
     expect(res.status).toBe(502);
     expect(await errorCode(res)).toBe("upstream_error");
+  });
+});
+
+describe("graduated safety", () => {
+  const SAFE_DEVICE = "5afe0000-1111-2222-3333-444444444444";
+
+  function mockGate(mode: string, risk: string) {
+    mockUpstreamText(
+      JSON.stringify({
+        candidates: [
+          { content: { parts: [{ text: JSON.stringify({ mode, risk, optionA: "", optionB: "", questions: [] }) }] } },
+        ],
+      }),
+    );
+  }
+
+  it("self_harm → no strike, no lockout, lockout null", async () => {
+    mockGate("SENSITIVE", "self_harm");
+    const res = await post("/v1/session-plan", SAFE_DEVICE, JSON.stringify({ scenario: "x" }));
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { mode: string; risk: string; lockout: unknown };
+    expect(body.mode).toBe("SENSITIVE");
+    expect(body.risk).toBe("self_harm");
+    expect(body.lockout).toBeNull();
+  });
+
+  it("harm_others → strike 1 refusal (no lock), strike 2 locks 5 minutes", async () => {
+    const device = "5afe0001-1111-2222-3333-444444444444";
+    mockGate("SENSITIVE", "harm_others");
+    const first = await post("/v1/session-plan", device, JSON.stringify({ scenario: "x" }));
+    const b1 = (await first.json()) as { lockout: { until: number; strikes: number } };
+    expect(b1.lockout.strikes).toBe(1);
+    expect(b1.lockout.until).toBe(0); // refusal only, no lock
+
+    mockGate("SENSITIVE", "illegal");
+    const second = await post("/v1/session-plan", device, JSON.stringify({ scenario: "x" }));
+    const b2 = (await second.json()) as { lockout: { until: number; strikes: number } };
+    expect(b2.lockout.strikes).toBe(2);
+    expect(b2.lockout.until).toBeGreaterThan(Date.now());
+    expect(b2.lockout.until).toBeLessThanOrEqual(Date.now() + 5 * 60_000 + 5_000);
+
+    // While locked: session-plan short-circuits without any upstream call
+    const third = await post("/v1/session-plan", device, JSON.stringify({ scenario: "innocent" }));
+    const b3 = (await third.json()) as { mode: string; lockout: { strikes: number } };
+    expect(b3.mode).toBe("LOCKED");
+    expect(b3.lockout.strikes).toBe(2);
   });
 });
 

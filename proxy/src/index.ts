@@ -102,6 +102,20 @@ async function handleOperation(
     return errorResponse("rate_limited", "device rate limit exceeded — try again later", meta);
   }
 
+  // Active safety lock: session starts are refused server-side (a session
+  // already in flight may still request its verdict). No spend, no model call.
+  if (op === "session-plan" && meter.safetyLockedUntil > Date.now()) {
+    meta.outcome = "safety_locked";
+    return Response.json({
+      mode: "LOCKED",
+      risk: "harm_others",
+      optionA: "",
+      optionB: "",
+      questions: [],
+      lockout: { until: meter.safetyLockedUntil, strikes: meter.safetyStrikes },
+    });
+  }
+
   const spendStub = env.SPEND_CAP.get(env.SPEND_CAP.idFromName("global"));
   const spend = await spendStub.checkAndIncrement();
   if (!spend.allowed) {
@@ -143,8 +157,8 @@ async function handleOperation(
             {
               system: ops.gateSystem((body as { scenario: string }).scenario ?? ""),
               user: ops.GATE_USER,
-              geminiSchema: ops.SESSION_PLAN_GEMINI_SCHEMA,
-              anthropicSchema: ops.SESSION_PLAN_ANTHROPIC_SCHEMA,
+              geminiSchema: ops.GATE_GEMINI_SCHEMA,
+              anthropicSchema: ops.GATE_ANTHROPIC_SCHEMA,
               temperature: 0.2,
             },
             gateConfig.model,
@@ -159,7 +173,22 @@ async function handleOperation(
 
       if (gate) {
         const mode = String(gate["mode"]).toUpperCase();
-        if (mode === "SENSITIVE" || mode === "TOO_BIG" || mode === "NOT_A_DECISION") {
+        if (mode === "SENSITIVE") {
+          const risk = String(gate["risk"] ?? "harm_others").toLowerCase();
+          if (risk === "self_harm") {
+            // Support, never punishment: no strike, no lockout — the app
+            // shows crisis resources
+            payload = { ...gate, risk: "self_harm", lockout: null };
+          } else {
+            // Harmful intent: graduated consequence, counted server-side
+            const strike = await meterStub.recordSafetyStrike();
+            payload = {
+              ...gate,
+              risk,
+              lockout: { until: strike.lockedUntil, strikes: strike.strikes },
+            };
+          }
+        } else if (mode === "TOO_BIG" || mode === "NOT_A_DECISION") {
           payload = gate; // terminal classification: no premium call, fast return
         } else {
           const spend2 = await spendStub.checkAndIncrement();
