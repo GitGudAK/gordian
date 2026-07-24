@@ -231,33 +231,46 @@ final class FollowUpManager: NSObject, UNUserNotificationCenterDelegate {
     }
 
     // MARK: - UNUserNotificationCenterDelegate
+    //
+    // Completion-handler variants, completed on the main queue. The async
+    // variants resume on a background executor, and UIKit's bridged completion
+    // then runs its snapshot/state-restoration work off-main — an
+    // NSInternalInconsistencyException ("Call must be made on main thread")
+    // that only fires on notification cold launches.
 
     nonisolated func userNotificationCenter(
         _ center: UNUserNotificationCenter,
-        willPresent notification: UNNotification
-    ) async -> UNNotificationPresentationOptions {
-        [.banner, .sound]
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        DispatchQueue.main.async {
+            completionHandler([.banner, .sound])
+        }
     }
 
     nonisolated func userNotificationCenter(
         _ center: UNUserNotificationCenter,
-        didReceive response: UNNotificationResponse
-    ) async {
+        didReceive response: UNNotificationResponse,
+        withCompletionHandler completionHandler: @escaping () -> Void
+    ) {
         let id = response.notification.request.content.userInfo["followUpID"] as? String
         let action = response.actionIdentifier
-        await MainActor.run {
-            guard let id, let container = self.container else { return }
-            let status: String
-            switch action {
-            case Self.actedActionID: status = "acted"
-            case Self.notYetActionID: status = "not_acted"
-            default: return // plain tap opens the app; no state change
-            }
-            let context = container.mainContext
-            let descriptor = FetchDescriptor<DecisionLog>(predicate: #Predicate { $0.followUpID == id })
-            if let log = try? context.fetch(descriptor).first {
-                log.actedOn = status
-                try? context.save()
+        DispatchQueue.main.async {
+            MainActor.assumeIsolated {
+                defer { completionHandler() }
+                guard let id, let container = self.container else { return }
+                let status: String
+                switch action {
+                case Self.actedActionID: status = "acted"
+                case Self.notYetActionID: status = "not_acted"
+                default: return // plain tap opens the app; no state change
+                }
+                let context = container.mainContext
+                let descriptor = FetchDescriptor<DecisionLog>(predicate: #Predicate { $0.followUpID == id })
+                if let log = try? context.fetch(descriptor).first {
+                    log.actedOn = status
+                    try? context.save()
+                }
             }
         }
     }
