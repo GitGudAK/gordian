@@ -3,7 +3,7 @@ spike: 005
 name: fm-reflection-quality
 type: standard
 validates: "Given a real dilemma, when the on-device Foundation Model generates the session plan and verdict via @Generable guided generation, then output quality, latency, and refusal-rate are acceptable vs the Gemini proxy"
-verdict: PARTIAL
+verdict: VALIDATED
 related: [002]
 tags: [foundation-models, apple-intelligence, on-device, ai, ios26]
 ---
@@ -55,6 +55,10 @@ and full generated text. Exported as JSON via share sheet.
   proxy's premium calls.
 - 2026-07-26: First battery run complete; log analyzed (14 events). Speed and
   guardrails validated; mode discipline and verdict grounding below bar.
+- 2026-07-26: Guardrail gap proven (vandalism dilemma ran instead of refusing)
+  -> on-device gate made a hard requirement, built into FMEngine.
+- 2026-07-26: Act 2 — FMEngine behind the real session flow via Labs toggle.
+  Founder full-experience test: grounded verdicts, contextual questions.
 
 ## Results
 PARTIAL (2026-07-26, battery on iPhone 17 Pro / iOS 26.5.2, forensic log on file).
@@ -87,6 +91,15 @@ classification first (mirror of the proxy's STEP 0 risk categories), with the
 strike ladder remaining server-side (reinstall-proof). Apple guardrails are a
 backstop, never the policy.
 
-Next iteration levers (cheap, in Labs): @Generable enum for mode (constrained
-decoding removes misclassification structurally), @Guide forcing imperative
-decision form, instructions forbidding facts not present in answers.
+Hardening pass shipped (FMEngine.swift, act 2): @Generable ENUMS for
+mode/risk, on-device Gordian gate, imperative-only decision guide, verdicts
+instructed as mirrors of the answers. Wired behind ProxyClient's types with a
+Labs toggle routing REAL sessions through the on-device model.
+
+FINAL: VALIDATED (2026-07-26). Founder ran full real sessions on-device and
+confirmed the two open quality bars now hold: verdicts grounded in the actual
+answers given, questions contextually relevant to the dilemma. Combined with
+1-4s latency, zero Apple-guardrail interference, and schema-perfect output,
+the on-device engine meets the product bar on Apple Intelligence hardware.
+Production architecture implication: HYBRID — FM engine on capable devices,
+proxy for everything else; gate policy on-device, strike ladder server-side.
