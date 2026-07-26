@@ -13,6 +13,7 @@ Design decisions locked in by the user during spiking. Non-negotiable for the re
 - Generation UX must show a loading state: thinking-model calls run ~7s.
 - Rotate the Gemini API key used during spiking before any release (it appeared in a chat transcript).
 
+- On-device gate is a HARD REQUIREMENT for any Foundation Models integration (2026-07-26): Apple guardrails allowed a vandalism dilemma through (de-escalated instead of refusing). Gordian's refuse-and-strike policy must be replicated as a first on-device classification; strike ladder stays server-side.
 - Liquid Glass is OUT (2026-07-26, founder decision): Gordian keeps its Art-Deco dark/gold card language. Do not re-propose Glass surfaces.
 - All-Apple exploration (2026-07-26): spikes 005-007 live on branch `spike/apple-native`, gated behind `#if canImport(FoundationModels)` + TestFlight receipt so main and App Store builds never see Labs. iOS 26 code compiles ONLY on Xcode Cloud (Intel Mac ceiling: Xcode 16.4).
 - "No 3rd-party code in binary" already holds for the shipped app (zero SPM/CocoaPods deps); the exploration targets removing the *server* dependency (Gemini proxy) via on-device Foundation Models.
