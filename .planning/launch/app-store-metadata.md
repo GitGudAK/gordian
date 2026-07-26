@@ -41,6 +41,13 @@ no AI mentions anywhere, no em-dashes, self-reflection positioning.
 > Free for 7 days from first launch. Then a simple subscription, or a one-time lifetime unlock if subscriptions aren't your thing.
 >
 > Gordian is a self-reflection exercise. It reflects your own answers and is not medical, legal, financial, or professional advice.
+>
+> Privacy Policy: https://gordian-proxy.gordian-app.workers.dev/privacy
+> Terms of Use (EULA): https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
+
+(EULA line is REQUIRED in the description by guideline 3.1.2 when auto-renewable
+subscriptions exist and no custom EULA is configured — App Review rejected
+2026-07-25 without it.)
 
 ## Keywords (100 chars)
 
