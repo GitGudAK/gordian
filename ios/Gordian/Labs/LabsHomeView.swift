@@ -12,7 +12,6 @@ struct LabsHomeView: View {
             Section {
                 NavigationLink("005 · Foundation Model reflections") { LabsFMView() }
                 NavigationLink("006 · SpeechAnalyzer transcription") { LabsSpeechView() }
-                NavigationLink("007 · Liquid Glass identity") { LabsGlassView() }
             } footer: {
                 Text("Spikes for the all-Apple stack. Run each, then export its forensic log and share it back for analysis. Nothing here touches your real sessions.")
             }

@@ -3,7 +3,7 @@ spike: 007
 name: liquid-glass-identity
 type: standard
 validates: "Given Gordian's Art-Deco dark/gold identity, when key surfaces adopt Liquid Glass, then the brand survives the material"
-verdict: PENDING
+verdict: INVALIDATED
 related: [004]
 tags: [liquid-glass, swiftui, design, ios26]
 ---
@@ -35,6 +35,11 @@ Four Gordian surfaces rendered twice: shipped styling vs glass counterpart.
 
 ## Investigation Trail
 - 2026-07-26: Harness built (LabsGlassView with GlassOrCard flip modifier).
+- 2026-07-26: Founder ran the toggle on an iPhone 17 Pro (iOS 26.5) and rejected the glass telling outright. Harness deleted.
 
 ## Results
-PENDING — awaits screenshots and the founder's eye.
+INVALIDATED (2026-07-26, founder judgment on device). Liquid Glass does not
+carry Gordian's Art-Deco dark/gold identity — the near-black backdrop gives
+Glass nothing to refract and the surfaces lose their considered card language.
+Harness removed from Labs; the shipped styling stands. Matches the risk noted
+in Research.

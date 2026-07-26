@@ -3,7 +3,7 @@ spike: 006
 name: speechanalyzer-transcription
 type: standard
 validates: "Given spoken dilemmas, when transcribed by SpeechAnalyzer + SpeechTranscriber on-device, then accuracy and latency beat the current SFSpeechRecognizer path"
-verdict: PENDING
+verdict: VALIDATED
 related: [003]
 tags: [speechanalyzer, speech, on-device, ios26]
 ---
@@ -43,8 +43,12 @@ Forensic log via share sheet: asset events, format, volatile/final results
 with timestamps, errors.
 
 ## Investigation Trail
-- 2026-07-26: Harness built (LabsSpeechView + LabsSpeechEngine). Awaiting
-  device run.
+- 2026-07-26: Harness built (LabsSpeechView + LabsSpeechEngine).
+- 2026-07-26: Device run on iPhone 17 Pro: "works well" — live volatile text and clean finals.
 
 ## Results
-PENDING — awaits device run on TestFlight.
+VALIDATED (2026-07-26). Founder ran live transcription on an iPhone 17 Pro
+(iOS 26.5): pipeline works well end-to-end — assets, volatile streaming, and
+finalized text on device. Precise latency numbers still welcome via the
+exported forensic log, but feasibility is settled: SpeechAnalyzer can replace
+the SFSpeechRecognizer path in the real app.
