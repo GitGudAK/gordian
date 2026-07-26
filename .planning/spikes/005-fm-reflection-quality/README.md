@@ -3,7 +3,7 @@ spike: 005
 name: fm-reflection-quality
 type: standard
 validates: "Given a real dilemma, when the on-device Foundation Model generates the session plan and verdict via @Generable guided generation, then output quality, latency, and refusal-rate are acceptable vs the Gemini proxy"
-verdict: PENDING
+verdict: PARTIAL
 related: [002]
 tags: [foundation-models, apple-intelligence, on-device, ai, ios26]
 ---
@@ -52,7 +52,31 @@ and full generated text. Exported as JSON via share sheet.
 
 ## Investigation Trail
 - 2026-07-26: Harness built (LabsFMView). Battery of 6 dilemmas mirroring the
-  proxy's premium calls. Awaiting first device run.
+  proxy's premium calls.
+- 2026-07-26: First battery run complete; log analyzed (14 events). Speed and
+  guardrails validated; mode discipline and verdict grounding below bar.
 
 ## Results
-PENDING — awaits device run on TestFlight.
+PARTIAL (2026-07-26, battery on iPhone 17 Pro / iOS 26.5.2, forensic log on file).
+
+Validated hard:
+- Latency: plans 1.2-3.8s, verdicts 1.0-1.6s; full 6-dilemma battery (12
+  generations) in 19s total. Order of magnitude faster than the proxy.
+- Zero guardrail refusals, including both edge dilemmas (confrontation,
+  risky-money). Apple's safety layer did not narrow Gordian's envelope.
+- 100% schema-valid output via @Generable — no repair ladder needed.
+
+Not yet at the premium bar:
+- Mode classification 1/6 correct (BINARY dilemmas -> OPEN, YES_NO -> BINARY);
+  option labels filled when mode says they shouldn't be.
+- One verdict returned a QUESTION as the decision (open-career) — breaks the
+  product's straight-answer promise.
+- Verdicts fabricate grounding: cite specifics ("strong evidence", "values
+  teamwork") absent from the actual answers. Worst failure class for a product
+  whose disclaimer promises to mirror the user's own answers.
+- Question quality flatter than Gemini premium; some analytical rather than
+  gut-fire ("Do you have access to a reliable computer?").
+
+Next iteration levers (cheap, in Labs): @Generable enum for mode (constrained
+decoding removes misclassification structurally), @Guide forcing imperative
+decision form, instructions forbidding facts not present in answers.
