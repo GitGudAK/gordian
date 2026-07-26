@@ -23,3 +23,19 @@ Patterns and stack choices established across spike sessions. New spikes follow 
 ## Tools & Libraries
 - Foundation, SwiftUI, Combine, AVFoundation, Speech — all present in the CLT macOS 11.3 SDK.
 - Avoid: generative-ai-swift (deprecated), Firebase AI Logic (heavy), anything requiring SPM/Xcode until spike 001 remediation.
+
+
+## iOS 26 spiking on the Intel-Mac ceiling (established spikes 005-007)
+
+- iOS 26-only code (FoundationModels, SpeechAnalyzer, glassEffect) lives behind
+  `#if canImport(FoundationModels)` + `@available(iOS 26.0, *)`: local Xcode
+  16.4 builds exclude it (stay green), Xcode Cloud's iOS 26 SDK compiles it.
+- Spike harnesses ship as a hidden Labs screen (Settings -> LABS), runtime-gated
+  to TestFlight via sandbox receipt check (LabsGate.isTestFlight). Spike code
+  stays on a `spike/*` branch; main stays clean for App Store submissions.
+- Xcode Cloud "Branch Changes" does NOT build commits that predate adding the
+  branch condition — push a trigger commit after adding it.
+- Device-run spikes carry a forensic log (LabsLog): timestamped tagged events,
+  exported as JSON via ShareLink. The exported JSON is the spike result.
+- Real-flow engine swaps go behind the existing typed seam (ProxyClient's
+  types) with a Labs toggle, so the production path is untouched when off.
