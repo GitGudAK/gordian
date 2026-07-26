@@ -132,6 +132,26 @@ struct SettingsView: View {
                         }
                         .padding(16)
                         .gordianCard(cornerRadius: 16)
+
+                        // Labs: spike harness. Exists only in iOS 26 SDK builds
+                        // (Xcode Cloud) and only surfaces on TestFlight installs.
+                        #if canImport(FoundationModels)
+                        if #available(iOS 26.0, *), LabsGate.isTestFlight {
+                            NavigationLink {
+                                LabsHomeView()
+                            } label: {
+                                HStack {
+                                    SectionLabel(text: "LABS", tracking: 1)
+                                    Spacer()
+                                    Image(systemName: "chevron.right")
+                                        .font(.system(size: 12))
+                                        .foregroundColor(.textMuted)
+                                }
+                                .padding(16)
+                            }
+                            .gordianCard(cornerRadius: 16)
+                        }
+                        #endif
                     }
                     .padding(24)
                 }

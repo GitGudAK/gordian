@@ -23,3 +23,20 @@
 - **Downstream:** source-complete iOS port in `ios/` (uncompiled); v1 product direction captured in `.planning/notes/ios-product-direction.md` + `.planning/REQUIREMENTS.md`.
 
 Open verification: `spike003 full` (speech+RMS with a human speaking), `SessionFlow` feel check, and first Xcode build of `ios/`.
+
+
+## Session 2 — 2026-07-26 (spikes 005-007, all-Apple stack)
+
+**Feature area:** on-device-apple-stack → `references/on-device-apple-stack.md`
+
+| # | Name | Type | Verdict | Feature Area |
+|---|------|------|---------|--------------|
+| 005 | fm-reflection-quality | standard | VALIDATED (post-hardening) | on-device-apple-stack |
+| 006 | speechanalyzer-transcription | standard | VALIDATED | on-device-apple-stack |
+| 007 | liquid-glass-identity | standard | INVALIDATED | on-device-apple-stack |
+
+Key findings: FM engine runs real sessions on-device (1-4s, schema-perfect,
+founder-confirmed grounded verdicts); enum-constrained classification is
+mandatory; Apple guardrails de-escalate rather than refuse → Gordian's gate
+ships on-device; privacy headline: nothing leaves the phone on the FM path;
+Liquid Glass rejected for the deco identity.

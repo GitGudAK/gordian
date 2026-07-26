@@ -167,6 +167,27 @@ final class SessionViewModel {
 
     private let proxy = ProxyClient()
 
+    // Engine routing: production is the proxy, always. On TestFlight builds
+    // compiled with the iOS 26 SDK, the Labs toggle can swap in the on-device
+    // Foundation Model behind the same types (spike 005 full-experience test).
+    private func aiSessionPlan(scenario: String) async throws -> ProxySessionPlan {
+        #if canImport(FoundationModels)
+        if #available(iOS 26.0, *), FMEngine.isEnabled {
+            return try await FMEngine().sessionPlan(scenario: scenario)
+        }
+        #endif
+        return try await proxy.sessionPlan(scenario: scenario)
+    }
+
+    private func aiVerdict(scenario: String, answers: [ProxyAnswer]) async throws -> ProxyVerdict {
+        #if canImport(FoundationModels)
+        if #available(iOS 26.0, *), FMEngine.isEnabled {
+            return try await FMEngine().verdict(scenario: scenario, answers: answers)
+        }
+        #endif
+        return try await proxy.verdict(scenario: scenario, answers: answers)
+    }
+
     // Sessions are AI-driven, always: the proxy retries a fallback model
     // server-side; if the network itself is down, the user retries — there are
     // no pre-canned session questions.
@@ -320,7 +341,8 @@ final class SessionViewModel {
             defer { isGeneratingQuestions = false }
             do {
                 // Prompts, classification, and the safety gate live server-side.
-                let plan = try await proxy.sessionPlan(scenario: scenario)
+                // (Labs: the on-device engine mirrors all of it behind the same types.)
+                let plan = try await aiSessionPlan(scenario: scenario)
                 if plan.mode.uppercased() == "SENSITIVE" || plan.mode.uppercased() == "LOCKED" {
                     applyServerSafety(risk: plan.risk, lockout: plan.lockout)
                     return
@@ -488,7 +510,7 @@ final class SessionViewModel {
             isLoading = true
             defer { isLoading = false }
             do {
-                let verdict = try await proxy.verdict(scenario: scenario, answers: answers)
+                let verdict = try await aiVerdict(scenario: scenario, answers: answers)
                 let (_, majority, _, _) = tallyDecision()
                 applyVerdict(
                     decision: verdict.decision,
