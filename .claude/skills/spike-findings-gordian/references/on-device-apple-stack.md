@@ -30,10 +30,17 @@ running in real sessions):
    yesNo, sensitive, tooBig, notADecision }`. Raw String mode fields
    misclassified 5/6 in the battery; the enum made it structurally impossible.
    Same for risk (`none/selfHarm/harmOthers/illegal`) and sentiment.
-4. Gate-in-the-plan: the plan generation's instructions put safety first;
-   `sensitive` + risk category maps to the proxy's SENSITIVE payload so the
-   production RefusalView renders unchanged.
-5. Verdict grounding: instructions must say "you are a mirror: every claim
+4. TWO-TIER gate, non-negotiable: a DEDICATED gate generation (FMGateCheck:
+   assessment sentence first, then risk enum) runs before the plan. The merged
+   gate-in-the-plan design FAILED live — one generation asked to classify AND
+   write questions spends its attention on questions and never picks
+   sensitive (vandalism ran a session). Single-purpose classifier caught it.
+   ~1s extra, free, on-device.
+5. Question quality on 3B needs BOTH a specificity contract in the @Guide
+   ("each naming a concrete detail from THIS dilemma; generic questions are
+   failures") AND a worked bad-vs-good example in the instructions — without
+   them the model emits survey templates ("How important is stability?").
+5b. Verdict grounding: instructions must say "you are a mirror: every claim
    must come from the answers below; if the answers do not say it, you do not
    know it" and the decision @Guide must force ONE imperative sentence, never
    a question. Both fabrication modes were observed before these instructions.

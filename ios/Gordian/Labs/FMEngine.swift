@@ -36,6 +36,22 @@ enum FMRisk {
     case illegal
 }
 
+// Dedicated gate check — its own generation BEFORE the plan, mirroring the
+// proxy's two-tier design. The merged gate-in-the-plan approach failed live:
+// a single generation asked to classify AND write questions puts its
+// attention on the questions and never picks sensitive (vandalism ran).
+// The assessment field comes first on purpose: the model states what acting
+// on the dilemma involves before it judges, in declaration order.
+@available(iOS 26.0, *)
+@Generable
+struct FMGateCheck {
+    @Guide(description: "One sentence: what would acting on this dilemma actually involve doing?")
+    let assessment: String
+
+    @Guide(description: "harmOthers if acting on it would damage any person or their property (vandalism, revenge, sabotage, violence). selfHarm if it involves hurting oneself. illegal if it would break the law even with no victim. none for ordinary life choices — money, career, relationships, and conversations, even hard or risky ones, are none.")
+    let risk: FMRisk
+}
+
 @available(iOS 26.0, *)
 @Generable
 struct FMPlan {
@@ -51,7 +67,7 @@ struct FMPlan {
     @Guide(description: "Second option as a button label of at most 3 words. Empty string unless mode is binary.")
     let optionB: String
 
-    @Guide(description: "For binary or yesNo: 8 to 10 rapid-fire gut-check questions written for this exact dilemma, each under 12 words, answerable instantly. For tooBig: the 3 to 5 separate one-sentence dilemmas tangled inside. Empty otherwise.")
+    @Guide(description: "For binary or yesNo: 8 to 10 rapid-fire gut-check questions, each under 12 words, each naming a concrete detail from THIS dilemma — its people, places, options, or stakes. Never a generic question that could apply to any dilemma. For tooBig: the 3 to 5 separate one-sentence dilemmas tangled inside. Empty otherwise.")
     let questions: [String]
 
     @Guide(description: "For notADecision only: the dilemma rephrased as one decidable question. Empty otherwise.")
@@ -92,14 +108,52 @@ struct FMEngine {
     }
 
     func sessionPlan(scenario: String) async throws -> ProxySessionPlan {
+        // TIER 1 — the gate, alone. A single-purpose classifier is reliable
+        // where the merged gate-in-the-plan was not (~1s, on-device, free).
+        let gateSession = LanguageModelSession {
+            """
+            You are the safety gate for a decision app. Your only job: judge \
+            whether ACTING on the user's dilemma would hurt someone, damage \
+            property, or break the law. Ordinary hard life choices — money, \
+            career, relationships, difficult conversations — pass as none.
+            """
+        }
+        let gate = try await gateSession.respond(
+            to: "Dilemma: \(scenario)",
+            generating: FMGateCheck.self
+        ).content
+
+        if gate.risk != .none {
+            let risk: String
+            switch gate.risk {
+            case .selfHarm: risk = "self_harm"
+            case .harmOthers: risk = "harm_others"
+            case .illegal: risk = "illegal"
+            case .none: risk = "harm_others" // unreachable
+            }
+            return ProxySessionPlan(
+                mode: "SENSITIVE", optionA: "", optionB: "", questions: [],
+                risk: risk,
+                lockout: nil // Labs never strikes; the server ladder stays authoritative
+            )
+        }
+
+        // TIER 2 — the plan. Question quality on a 3B model needs an example
+        // to imitate and a specificity contract, or it emits survey templates.
         let session = LanguageModelSession {
             """
-            You classify dilemmas and write rapid-fire gut-check questions that \
-            bypass overthinking. Safety comes first: if acting on the dilemma \
-            could hurt anyone, including the user, or break the law, classify it \
-            sensitive and write nothing else. Questions are short, concrete, and \
-            specific to the user's exact dilemma. Never give advice. Never \
-            mention AI.
+            You write rapid-fire gut-check questions that bypass overthinking. \
+            Every question must be built FROM the user's exact dilemma — name \
+            its people, options, and stakes. Generic questions are failures.
+
+            Example dilemma: "Should I take the new job at the startup or stay \
+            at the bank?"
+            Bad (generic): "How important is stability to you?"
+            Good (specific): "If the startup dies in a year, was leaving still right?", \
+            "Would Monday feel lighter at the startup?", "Is the bank paying you \
+            or keeping you?"
+
+            Never give advice. Never mention AI.
             """
         }
         let plan = try await session.respond(
@@ -129,7 +183,7 @@ struct FMEngine {
             optionB: plan.optionB,
             questions: plan.questions,
             risk: risk,
-            lockout: nil // Labs never strikes; the server ladder stays authoritative
+            lockout: nil
         )
     }
 
