@@ -69,12 +69,16 @@ function questionsSystem(mode, optionA, optionB) {
 }
 
 const VERDICT_SYSTEM =
-  "You state the decision a user's own rapid-fire answers point to. You are a mirror: every claim must come from the answers, quoted or plainly restated. If the answers do not say it, you do not know it. The decision is ONE imperative sentence naming the choice — never a question. Never mention AI.";
+  "You state the decision a user's own rapid-fire answers point to. You are a mirror: every claim must come from the answers, quoted or plainly restated. If the answers do not say it, you do not know it. The decision is ONE imperative sentence naming the choice — never a question. The next step is one concrete physical action doable within 24 hours — never 'decide', 'consider', or 'reflect'. Never mention AI.";
 
 const QUESTIONS_SCHEMA = {
   type: "OBJECT",
-  properties: { questions: { type: "ARRAY", items: { type: "STRING" }, minItems: 8, maxItems: 10 } },
-  required: ["questions"],
+  properties: {
+    optionA: { type: "STRING", description: "First alternative as a Title Case button label, 1-3 words" },
+    optionB: { type: "STRING", description: "Second alternative as a Title Case button label, 1-3 words" },
+    questions: { type: "ARRAY", items: { type: "STRING" }, minItems: 8, maxItems: 10 },
+  },
+  required: ["optionA", "optionB", "questions"],
 };
 
 const VERDICT_SCHEMA = {
@@ -103,16 +107,19 @@ let processed = 0;
 for (const row of corpus) {
   if (processed >= LIMIT) break;
   if (row.mode !== "binary" && row.mode !== "yesNo") continue;
-  const optionA = row.mode === "binary" ? "Option A" : "No";
-  const optionB = row.mode === "binary" ? "Option B" : "Yes";
 
   try {
     if (!done.has(row.id + ":questions")) {
       const q = await generate(
-        questionsSystem(row.mode, optionA, optionB),
-        `Dilemma: ${row.dilemma}`,
+        questionsSystem(row.mode, "the first option", "the second option"),
+        `Dilemma: ${row.dilemma}` +
+          (row.mode === "binary"
+            ? "\nExtract the two alternatives as short Title Case button labels (optionA, optionB), then write the questions so each is answered by picking one label."
+            : "\nSet optionA to 'No' and optionB to 'Yes'."),
         QUESTIONS_SCHEMA
       );
+      const optionA = row.mode === "binary" ? q.optionA : "No";
+      const optionB = row.mode === "binary" ? q.optionB : "Yes";
       appendFileSync(OUT, JSON.stringify({ id: row.id, teacher: "gemini", kind: "questions", input: { dilemma: row.dilemma, mode: row.mode }, output: q }) + "\n");
 
       if (!done.has(row.id + ":verdict")) {
