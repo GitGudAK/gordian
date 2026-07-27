@@ -36,10 +36,14 @@ running in real sessions):
    write questions spends its attention on questions and never picks
    sensitive (vandalism ran a session). Single-purpose classifier caught it.
    ~1s extra, free, on-device.
-5. Question quality on 3B needs BOTH a specificity contract in the @Guide
-   ("each naming a concrete detail from THIS dilemma; generic questions are
-   failures") AND a worked bad-vs-good example in the instructions — without
-   them the model emits survey templates ("How important is stability?").
+5. Questions are a SEPARATE generation that receives the already-decided
+   mode and option labels as input (mirror of the proxy). The interaction
+   contract must be explicit: "every question answerable INSTANTLY by tapping
+   one of the two buttons; forced-choice framing for binary, yes/no for
+   yesNo, never 'how much'". Without it the buttons cannot answer the
+   questions the model writes.
+5a. NEVER put negative examples in a 3B prompt — the model reproduced the
+   "bad" example verbatim in a live session. Positive examples only.
 5b. Verdict grounding: instructions must say "you are a mirror: every claim
    must come from the answers below; if the answers do not say it, you do not
    know it" and the decision @Guide must force ONE imperative sentence, never

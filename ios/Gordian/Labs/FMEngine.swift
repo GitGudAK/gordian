@@ -1,31 +1,28 @@
-// FMEngine — spike 005's second act: the on-device Foundation Model behind
-// the exact ProxyClient types, so the REAL session flow can run on it.
-// Enabled by the Labs toggle (TestFlight only); off = proxy, untouched.
+// FMEngine — the on-device Foundation Model behind the exact ProxyClient
+// types, so the REAL session flow can run on it. Enabled by the Labs toggle
+// (TestFlight only); off = proxy, untouched.
 //
-// Design decisions carried from the 005 battery findings:
-//  - mode/risk are @Generable ENUMS: constrained decoding makes the 1-of-6
-//    misclassification failure structurally impossible to emit as free text
-//  - Gordian's own gate runs ON DEVICE inside the plan generation (Apple's
-//    guardrails de-escalate; they do not enforce our refuse-and-strike policy)
-//  - verdict instructions forbid citing anything not present in the answers
-//    (the battery showed fabricated grounding) and force imperative decisions
-//  - refusals here do NOT strike: Labs is founder-only; the server ladder
-//    stays authoritative for production
+// Structure mirrors the production proxy's two-tier design 1:1 — lessons
+// bought live on device:
+//  - TIER 1 classifies (risk, mode, options) with NOTHING else to think
+//    about. A merged classify-and-write-questions generation put its
+//    attention on questions and let a vandalism dilemma through the gate.
+//  - TIER 2 writes questions FOR an already-decided mode, receiving the
+//    option labels as input. Without that, binary sessions got yes/no and
+//    "how much" questions the two option buttons cannot answer.
+//  - Enums everywhere classification happens: constrained decoding makes
+//    misclassification structurally impossible to emit.
+//  - NO negative examples in prompts: the 3B model reproduced the "bad"
+//    example verbatim in a real session. Show it only what good looks like.
+//  - Verdict instructions forbid citing anything not present in the answers
+//    (fabricated grounding observed) and force imperative decisions.
+//  - Refusals here do NOT strike: Labs is founder-only; the server ladder
+//    stays authoritative for the proxy path.
 
 #if canImport(FoundationModels)
 
 import Foundation
 import FoundationModels
-
-@available(iOS 26.0, *)
-@Generable
-enum FMMode {
-    case binary
-    case yesNo
-    case sensitive
-    case tooBig
-    case notADecision
-}
 
 @available(iOS 26.0, *)
 @Generable
@@ -36,12 +33,18 @@ enum FMRisk {
     case illegal
 }
 
-// Dedicated gate check — its own generation BEFORE the plan, mirroring the
-// proxy's two-tier design. The merged gate-in-the-plan approach failed live:
-// a single generation asked to classify AND write questions puts its
-// attention on the questions and never picks sensitive (vandalism ran).
-// The assessment field comes first on purpose: the model states what acting
-// on the dilemma involves before it judges, in declaration order.
+@available(iOS 26.0, *)
+@Generable
+enum FMMode {
+    case binary
+    case yesNo
+    case tooBig
+    case notADecision
+}
+
+// TIER 1 — classification only. Assessment comes first on purpose: the model
+// states what acting on the dilemma involves before it judges (declaration
+// order is generation order).
 @available(iOS 26.0, *)
 @Generable
 struct FMGateCheck {
@@ -50,28 +53,29 @@ struct FMGateCheck {
 
     @Guide(description: "harmOthers if acting on it would damage any person or their property (vandalism, revenge, sabotage, violence). selfHarm if it involves hurting oneself. illegal if it would break the law even with no victim. none for ordinary life choices — money, career, relationships, and conversations, even hard or risky ones, are none.")
     let risk: FMRisk
-}
 
-@available(iOS 26.0, *)
-@Generable
-struct FMPlan {
-    @Guide(description: "sensitive if acting on the dilemma could hurt the user or someone else or break the law. tooBig if it bundles several separate decisions. notADecision if it is not a decision at all. binary if it weighs exactly two named options. yesNo otherwise.")
+    @Guide(description: "binary if it weighs exactly two named alternatives. yesNo if it is a single go/no-go decision. tooBig if it bundles several separate decisions. notADecision if it is not a decision at all.")
     let mode: FMMode
 
-    @Guide(description: "Risk category. none unless mode is sensitive.")
-    let risk: FMRisk
-
-    @Guide(description: "First option as a button label of at most 3 words. Empty string unless mode is binary.")
+    @Guide(description: "For binary: first alternative as a Title Case button label of 1-3 words. Empty otherwise.")
     let optionA: String
 
-    @Guide(description: "Second option as a button label of at most 3 words. Empty string unless mode is binary.")
+    @Guide(description: "For binary: second alternative as a Title Case button label of 1-3 words. Empty otherwise.")
     let optionB: String
 
-    @Guide(description: "For binary or yesNo: 8 to 10 rapid-fire gut-check questions, each under 12 words, each naming a concrete detail from THIS dilemma — its people, places, options, or stakes. Never a generic question that could apply to any dilemma. For tooBig: the 3 to 5 separate one-sentence dilemmas tangled inside. Empty otherwise.")
-    let questions: [String]
+    @Guide(description: "For tooBig: the 3 to 5 separate one-sentence dilemmas tangled inside. Empty otherwise.")
+    let knots: [String]
 
-    @Guide(description: "For notADecision only: the dilemma rephrased as one decidable question. Empty otherwise.")
+    @Guide(description: "For notADecision: the input rephrased as one decidable question. Empty otherwise.")
     let reframe: String
+}
+
+// TIER 2 — questions for a known mode, nothing else.
+@available(iOS 26.0, *)
+@Generable
+struct FMQuestions {
+    @Guide(description: "8 to 10 rapid-fire gut-check questions, each under 12 words, each naming a concrete detail of this exact dilemma — its people, options, or stakes.")
+    let questions: [String]
 }
 
 @available(iOS 26.0, *)
@@ -108,14 +112,14 @@ struct FMEngine {
     }
 
     func sessionPlan(scenario: String) async throws -> ProxySessionPlan {
-        // TIER 1 — the gate, alone. A single-purpose classifier is reliable
-        // where the merged gate-in-the-plan was not (~1s, on-device, free).
+        // TIER 1 — gate + classification, alone (~1s, on-device, free)
         let gateSession = LanguageModelSession {
             """
-            You are the safety gate for a decision app. Your only job: judge \
-            whether ACTING on the user's dilemma would hurt someone, damage \
-            property, or break the law. Ordinary hard life choices — money, \
-            career, relationships, difficult conversations — pass as none.
+            You are the gate for a decision app. You judge whether ACTING on \
+            the user's dilemma would hurt someone, damage property, or break \
+            the law — ordinary hard life choices (money, career, \
+            relationships, difficult conversations) pass as none — and you \
+            classify what kind of decision it is.
             """
         }
         let gate = try await gateSession.respond(
@@ -138,51 +142,57 @@ struct FMEngine {
             )
         }
 
-        // TIER 2 — the plan. Question quality on a 3B model needs an example
-        // to imitate and a specificity contract, or it emits survey templates.
-        let session = LanguageModelSession {
+        switch gate.mode {
+        case .notADecision:
+            // The reframe travels in optionA, matching the proxy payload
+            return ProxySessionPlan(mode: "NOT_A_DECISION", optionA: gate.reframe,
+                                    optionB: "", questions: [], risk: nil, lockout: nil)
+        case .tooBig:
+            return ProxySessionPlan(mode: "TOO_BIG", optionA: "", optionB: "",
+                                    questions: gate.knots, risk: nil, lockout: nil)
+        case .binary, .yesNo:
+            break
+        }
+
+        // TIER 2 — questions for the decided mode. The answer buttons are the
+        // interaction contract: every question must be answerable by tapping
+        // one of them (ported from the proxy's proven prompt).
+        let isBinary = gate.mode == .binary
+        let optionA = isBinary ? gate.optionA : "No"
+        let optionB = isBinary ? gate.optionB : "Yes"
+        let framing = isBinary
+            ? """
+              The user answers every question by tapping one of two buttons: \
+              '\(optionA)' or '\(optionB)'. CRITICAL: every question must be \
+              answerable INSTANTLY by tapping one of those buttons. Frame each \
+              as a forced choice — like 'Which one would you start tonight?' \
+              or 'Which would you regret never trying?' — never yes/no \
+              phrasing, never 'how much' phrasing.
+              """
+            : """
+              The user answers every question by tapping 'Yes' or 'No'. \
+              CRITICAL: every question must be a direct yes/no question about \
+              this exact dilemma — never open-ended, never 'how much' phrasing.
+              """
+        let qSession = LanguageModelSession {
             """
-            You write rapid-fire gut-check questions that bypass overthinking. \
-            Every question must be built FROM the user's exact dilemma — name \
-            its people, options, and stakes. Generic questions are failures.
-
-            Example dilemma: "Should I take the new job at the startup or stay \
-            at the bank?"
-            Bad (generic): "How important is stability to you?"
-            Good (specific): "If the startup dies in a year, was leaving still right?", \
-            "Would Monday feel lighter at the startup?", "Is the bank paying you \
-            or keeping you?"
-
+            You write rapid-fire gut-check questions that bypass overthinking \
+            for a decision app. \(framing) Build every question FROM the \
+            user's exact dilemma — name its people, options, and stakes. \
             Never give advice. Never mention AI.
             """
         }
-        let plan = try await session.respond(
+        let qs = try await qSession.respond(
             to: "Dilemma: \(scenario)",
-            generating: FMPlan.self
+            generating: FMQuestions.self
         ).content
 
-        let mode: String
-        switch plan.mode {
-        case .binary: mode = "BINARY"
-        case .yesNo: mode = "YES_NO"
-        case .sensitive: mode = "SENSITIVE"
-        case .tooBig: mode = "TOO_BIG"
-        case .notADecision: mode = "NOT_A_DECISION"
-        }
-        let risk: String?
-        switch plan.risk {
-        case .none: risk = nil
-        case .selfHarm: risk = "self_harm"
-        case .harmOthers: risk = "harm_others"
-        case .illegal: risk = "illegal"
-        }
         return ProxySessionPlan(
-            mode: mode,
-            // NOT_A_DECISION carries the reframe in optionA, matching the proxy payload
-            optionA: mode == "NOT_A_DECISION" ? plan.reframe : plan.optionA,
-            optionB: plan.optionB,
-            questions: plan.questions,
-            risk: risk,
+            mode: isBinary ? "BINARY" : "YES_NO",
+            optionA: optionA,
+            optionB: optionB,
+            questions: qs.questions,
+            risk: nil,
             lockout: nil
         )
     }
