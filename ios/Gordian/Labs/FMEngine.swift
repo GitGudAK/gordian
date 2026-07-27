@@ -54,7 +54,7 @@ struct FMGateCheck {
     @Guide(description: "harmOthers if acting on it would damage any person or their property (vandalism, revenge, sabotage, violence). selfHarm if it involves hurting oneself. illegal if it would break the law even with no victim. none for ordinary life choices — money, career, relationships, and conversations, even hard or risky ones, are none.")
     let risk: FMRisk
 
-    @Guide(description: "binary if it weighs exactly two named alternatives. yesNo if it is a single go/no-go decision. tooBig if it bundles several separate decisions. notADecision if it is not a decision at all.")
+    @Guide(description: "binary if it weighs exactly two named alternatives the user could act on. yesNo if it is a single go/no-go decision the user could act on. tooBig if it bundles several separate decisions. notADecision if there is NO personal choice the user could act on — trivia, questions of fact or general opinion, venting, and statements are all notADecision.")
     let mode: FMMode
 
     @Guide(description: "For binary: first alternative as a Title Case button label of 1-3 words. Empty otherwise.")
@@ -182,19 +182,52 @@ struct FMEngine {
             Never give advice. Never mention AI.
             """
         }
-        let qs = try await qSession.respond(
+        // Prompts ask; validators enforce. 3B adherence is probabilistic, so
+        // every question is checked against the button contract, with one
+        // retry that names the rejects. Too few survivors -> throw, and the
+        // caller's existing offline fallback takes the session.
+        var valid = (try await qSession.respond(
             to: "Dilemma: \(scenario)",
             generating: FMQuestions.self
-        ).content
+        )).content.questions.filter { Self.obeysButtons($0, isBinary: isBinary) }
+
+        if valid.count < 6 {
+            let retry = try await qSession.respond(
+                to: "Several questions could not be answered by tapping '\(optionA)' or '\(optionB)'. Write 10 new ones. Every single question must be answered by one of those two taps.",
+                generating: FMQuestions.self
+            ).content.questions.filter { Self.obeysButtons($0, isBinary: isBinary) }
+            valid = retry.count > valid.count ? retry : valid
+        }
+        guard valid.count >= 5 else {
+            throw ProxyError.api(code: "fm_contract", message: "on-device questions failed the button contract")
+        }
 
         return ProxySessionPlan(
             mode: isBinary ? "BINARY" : "YES_NO",
             optionA: optionA,
             optionB: optionB,
-            questions: qs.questions,
+            questions: valid,
             risk: nil,
             lockout: nil
         )
+    }
+
+    /// Cheap runtime mirror of the dataset judge: can the answer buttons
+    /// answer this question?
+    static func obeysButtons(_ question: String, isBinary: Bool) -> Bool {
+        let q = question.lowercased()
+        // Open-ended interrogatives no button can answer, in either mode
+        for banned in ["how many", "how much", "how often", "how important", "what ", "what's", "why ", "when ", "where "] {
+            if q.hasPrefix(banned) { return false }
+        }
+        guard isBinary else { return true } // yesNo mode: yes/no phrasing is the contract
+        // Binary mode: a yes/no-shaped question without an either/or pivot
+        // cannot be answered by two option labels
+        let yesNoStarts = ["do you", "did you", "does ", "have you", "has ", "are you", "is ", "was ", "were you", "would you", "will you", "can you", "could you", "should you"]
+        if yesNoStarts.contains(where: { q.hasPrefix($0) }) && !q.contains(" or ") {
+            return false
+        }
+        return true
     }
 
     func verdict(scenario: String, answers: [ProxyAnswer]) async throws -> ProxyVerdict {
