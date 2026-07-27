@@ -67,6 +67,15 @@ visible state is exactly what the old SFSpeechRecognizer path lacked.
 `#if canImport(FoundationModels)` + `@available(iOS 26.0, *)`. Local Xcode
 16.4 excludes it (build stays green); Xcode Cloud (iOS 26 SDK) compiles it.
 
+## Head-to-head reality (2026-07-27, founder-run A/B)
+Same degenerate input ("what is man's best friend"): production Gemini bounced
+NOT_A_DECISION with the right copy; the 3B invented a Dog/Cat session with
+button-violating questions. Conclusion: prompt contracts are probabilistic at
+3B — runtime validation (FMEngine.obeysButtons + one corrective retry, offline
+fallback on failure) is mandatory, and the quality gap vs frontier models is
+structural. Product positioning: proxy = sharpness tier, on-device = privacy
+tier; only the adapter track can narrow the gap.
+
 ## What to Avoid
 
 - Free-text String fields for anything classification-like (battery: 1/6).
