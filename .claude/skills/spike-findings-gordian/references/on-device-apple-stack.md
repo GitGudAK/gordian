@@ -34,7 +34,7 @@ running in real sessions):
    assessment sentence first, then risk enum) runs before the plan. The merged
    gate-in-the-plan design FAILED live — one generation asked to classify AND
    write questions spends its attention on questions and never picks
-   sensitive (vandalism ran a session). Single-purpose classifier caught it.
+   sensitive (vandalism ran a session). Single-purpose classifier caught it — founder-confirmed live on device 2026-07-27 (vandalism dilemma -> RefusalView).
    ~1s extra, free, on-device.
 5. Questions are a SEPARATE generation that receives the already-decided
    mode and option labels as input (mirror of the proxy). The interaction
