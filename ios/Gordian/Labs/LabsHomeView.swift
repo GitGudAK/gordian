@@ -1,5 +1,5 @@
-// Labs — TestFlight-only spike harness for the all-Apple stack exploration.
-// Reachable from Settings on TestFlight builds compiled with the iOS 26 SDK.
+// Labs — TestFlight-only switch for the on-device engine (spike 005 outcome).
+// The spike harnesses are gone; their source lives in the findings skill.
 
 #if canImport(FoundationModels)
 
@@ -13,18 +13,11 @@ struct LabsHomeView: View {
     var body: some View {
         List {
             Section {
-                NavigationLink("005 · Foundation Model reflections") { LabsFMView() }
-                NavigationLink("006 · SpeechAnalyzer transcription") { LabsSpeechView() }
+                Toggle("All sessions are on-device (complete privacy)", isOn: $fmEngineOn)
             } footer: {
-                Text("Isolated spike harnesses. Export each forensic log and share it back for analysis.")
-            }
-
-            Section {
-                Toggle("On-device engine for real sessions", isOn: $fmEngineOn)
-            } footer: {
-                Text(SystemLanguageModel.default.availability == .available
-                     ? "When on, YOUR real sessions (dilemma → questions → verdict) run on the Foundation Model instead of the proxy. Full experience, fully on-device. Refusals in this mode never count strikes. Flip off to return to the proxy."
-                     : "Model unavailable on this device right now — the toggle has no effect until it is.")
+                if SystemLanguageModel.default.availability != .available {
+                    Text("The on-device model isn't available right now — sessions use the standard engine until it is.")
+                }
             }
         }
         .navigationTitle("Labs")
