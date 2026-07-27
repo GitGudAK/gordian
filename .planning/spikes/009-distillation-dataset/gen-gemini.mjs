@@ -27,6 +27,12 @@ const LIMIT = limitArg > -1 ? Number(process.argv[limitArg + 1]) : Infinity;
 const corpus = readFileSync(new URL("./corpus/dilemmas.jsonl", import.meta.url), "utf8")
   .trim().split("\n").map((l) => JSON.parse(l));
 
+// Eval rows never receive teacher outputs — the adapter must not train on
+// the dilemmas it will be measured against.
+const evalIds = new Set(
+  readFileSync(new URL("./corpus/eval-ids.txt", import.meta.url), "utf8").trim().split("\n")
+);
+
 mkdirSync(new URL("./out/", import.meta.url), { recursive: true });
 const OUT = new URL("./out/teacher-gemini.jsonl", import.meta.url);
 const done = new Set(
@@ -107,6 +113,7 @@ let processed = 0;
 for (const row of corpus) {
   if (processed >= LIMIT) break;
   if (row.mode !== "binary" && row.mode !== "yesNo") continue;
+  if (evalIds.has(row.id)) continue;
 
   try {
     if (!done.has(row.id + ":questions")) {
