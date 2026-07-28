@@ -24,3 +24,10 @@ build/
 .planning/spikes/**/SessionFlow
 .planning/spikes/**/*-log.json
 .planning/spikes/**/debug-*
+
+# Obsidian vault settings (local workspace state)
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+
+# Obsidian-visible alias for .planning (dotfolders are hidden in Obsidian)
+planning
