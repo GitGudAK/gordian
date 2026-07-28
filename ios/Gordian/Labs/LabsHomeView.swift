@@ -9,6 +9,9 @@ import FoundationModels
 struct LabsHomeView: View {
     @AppStorage(FMEngine.toggleKey) private var fmEngineOn = false
 
+    private static let appleIntelligenceHelp =
+        URL(string: "https://support.apple.com/en-us/121115")!
+
     private var modelReady: Bool {
         SystemLanguageModel.default.availability == .available
     }
@@ -16,36 +19,39 @@ struct LabsHomeView: View {
     var body: some View {
         List {
             Section {
-                Toggle("Private Mode", isOn: $fmEngineOn)
+                Toggle("Use the on-device model", isOn: $fmEngineOn)
                     .disabled(!modelReady)
+                if !modelReady {
+                    Link("How to turn on Apple Intelligence", destination: Self.appleIntelligenceHelp)
+                        .font(.footnote)
+                }
             } header: {
-                Text("Nothing leaves your iPhone")
+                Text("Private Mode")
             } footer: {
                 if modelReady {
-                    Text("Your dilemma, your answers, and your verdict stay on this device. No servers, no network — Private Mode works in airplane mode.\n\nSessions may feel a little plainer than usual: the model on your iPhone is smaller than the one Gordian normally uses.")
+                    Text("Sessions run entirely on your iPhone. Your dilemma, your answers, and your verdict never leave the device — Private Mode even works in airplane mode.")
                 } else {
-                    Text(unavailableReason)
+                    Text("Requires Apple Intelligence. \(unavailableDetail)")
                 }
             }
         }
         .navigationTitle("Private Mode")
     }
 
-    // Tells the user exactly what to switch on, and where.
-    private var unavailableReason: String {
+    private var unavailableDetail: String {
         switch SystemLanguageModel.default.availability {
         case .available:
             return ""
         case .unavailable(let reason):
             switch reason {
             case .appleIntelligenceNotEnabled:
-                return "Private Mode needs Apple Intelligence. Turn it on in Settings → Apple Intelligence & Siri, then come back."
+                return "Turn it on in Settings → Apple Intelligence & Siri, then come back."
             case .modelNotReady:
-                return "Apple Intelligence is still downloading its model. Keep this iPhone on Wi-Fi and charged for a while, then come back."
+                return "It's still finishing setup. Keep this iPhone on Wi-Fi and charged for a while, then come back."
             case .deviceNotEligible:
-                return "This iPhone can't run Private Mode. It needs Apple Intelligence, which is available on iPhone 15 Pro and newer."
+                return "This iPhone doesn't support it. Apple Intelligence is available on iPhone 15 Pro and newer."
             @unknown default:
-                return "Private Mode isn't available on this iPhone right now."
+                return "It isn't available on this iPhone right now."
             }
         }
     }
