@@ -90,6 +90,14 @@ crisis-resources line is supportive, not descriptive).
 
 ## Review notes (paste into App Review Information)
 
+REWRITTEN 2026-07-28 after the 1.0(28) rejection (3.1.1 + 2.1). The 2.1 issue
+was reviewers being unable to REACH the purchase flow, so the notes now say
+where it is in the first line.
+
+> Gordian has no accounts and no login, so no demo account is required or possible.
+>
+> TO SEE THE FULL PURCHASE FLOW: tap the gear icon (top right) then "See plans". This opens the paywall on demand — monthly, annual, and lifetime — without waiting out the 7-day trial. "Redeem a code" on the same screen opens the App Store's own offer-code redemption sheet; the app itself never unlocks anything (this addresses the previous 3.1.1 finding: the custom code screen has been removed entirely).
+>
 > Gordian requires no account. Full access is free for 7 days from first launch, after which an in-app subscription or lifetime purchase unlocks sessions (products attached to this version).
 >
 > To test a session: type any two-option dilemma (e.g. "Should I learn Spanish or German?") and tap Untie My Knot. Question generation takes 5-10 seconds.
