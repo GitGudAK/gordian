@@ -3,12 +3,10 @@
 # HOW TO RUN (Colab, GPU runtime — A100/L4 ideal, T4 workable):
 #   1. Drive: create folder  My Drive/Gordian-011/  containing:
 #        train.jsonl, eval-dilemmas.jsonl   (from this spike's out/)
-#   2. Kaggle: kaggle.com -> sign in with Google -> Gemma 3 model page ->
-#      accept license -> Settings/API -> Create New Token (kaggle.json)
-#   3. New Colab notebook -> Runtime > Change runtime type > GPU
-#   4. First cell:  %pip install -q -U transformers peft trl accelerate bitsandbytes kagglehub
-#   5. Upload this file via the Files pane, then:  %run colab_train_gemma.py
-#      (it will prompt once for kaggle.json upload and Drive mount)
+#   2. New Colab notebook -> Runtime > Change runtime type > GPU
+#   3. First cell:  %pip install -q -U transformers peft trl accelerate bitsandbytes
+#   4. Upload this file via the Files pane, then:  %run colab_train_gemma.py
+#      (prompts once for Drive mount; weights pull anonymously from ungated mirrors)
 # Outputs land in Drive/Gordian-011/out/: merged models + eval generations.
 # ============================================================
 
@@ -22,18 +20,12 @@ WORK = Path("/content/drive/MyDrive/Gordian-011")
 OUT = WORK / "out"; OUT.mkdir(parents=True, exist_ok=True)
 assert (WORK / "train.jsonl").exists(), "Upload train.jsonl to Drive/Gordian-011/ first"
 
-if not Path("/root/.kaggle/kaggle.json").exists():
-    print("Upload your kaggle.json:")
-    up = files.upload()
-    Path("/root/.kaggle").mkdir(exist_ok=True)
-    Path("/root/.kaggle/kaggle.json").write_bytes(list(up.values())[0])
-    os.chmod("/root/.kaggle/kaggle.json", 0o600)
-
-import kagglehub  # noqa: E402
-
+# Weights come from public ungated mirrors — no account, no token, anywhere.
+# (Google's Gemma license still governs use of the weights.) First reachable
+# candidate wins.
 MODELS = {
-    "gemma3-270m": "google/gemma-3/transformers/gemma-3-270m-it",
-    "gemma3-1b":   "google/gemma-3/transformers/gemma-3-1b-it",
+    "gemma3-270m": ["unsloth/gemma-3-270m-it", "google/gemma-3-270m-it"],
+    "gemma3-1b":   ["unsloth/gemma-3-1b-it", "google/gemma-3-1b-it"],
 }
 
 # ---------- data ----------
@@ -75,9 +67,16 @@ from peft import LoraConfig, get_peft_model  # noqa: E402
 from trl import SFTConfig, SFTTrainer  # noqa: E402
 from datasets import Dataset  # noqa: E402
 
-def run(tag: str, kaggle_ref: str):
+def run(tag: str, candidates):
     print(f"\n===== {tag} =====")
-    path = kagglehub.model_download(kaggle_ref)
+    path = None
+    for ref in candidates:
+        try:
+            AutoTokenizer.from_pretrained(ref)
+            path = ref; break
+        except Exception as e:
+            print(f"  {ref} unavailable: {e}")
+    assert path, f"no reachable weights for {tag}" 
     tok = AutoTokenizer.from_pretrained(path)
     small = "270m" in tag
     model = AutoModelForCausalLM.from_pretrained(
