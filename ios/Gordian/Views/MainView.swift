@@ -2,6 +2,7 @@
 
 import SwiftUI
 import SwiftData
+import StoreKit
 
 struct MainView: View {
     @State private var viewModel = SessionViewModel()
@@ -44,9 +45,7 @@ struct MainView: View {
         // The keyboard simply covers the nav; the dilemma field keeps its own
         // scroll-based avoidance, and the Go key submits.
         .ignoresSafeArea(.keyboard, edges: .bottom)
-        .sheet(isPresented: $showRedeemDemo) {
-            RedeemCodeView()
-        }
+        .offerCodeRedemption(isPresented: $showRedeemDemo) { _ in }
         .sheet(isPresented: $showSettings) {
             SettingsView(viewModel: viewModel)
                 .preferredColorScheme(.dark)

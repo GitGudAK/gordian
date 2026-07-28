@@ -10,6 +10,7 @@ struct SettingsView: View {
     @Query private var decisions: [DecisionLog]
     @State private var showPurgeConfirm = false
     @State private var showRedeemSheet = false
+    @State private var showPlansSheet = false
     @State private var followUpsEnabled = FollowUpManager.shared.followUpsEnabled
     @State private var dailyKnotEnabled = FollowUpManager.shared.dailyKnotEnabled
     @State private var weeklyRecapEnabled = FollowUpManager.shared.weeklyRecapEnabled
@@ -38,6 +39,23 @@ struct SettingsView: View {
                             Text(membershipStatus)
                                 .font(.footnote)
                                 .foregroundColor(.textMuted)
+                            // Plans are reachable at any time, not only once the
+                            // trial lapses — people can buy early, and App
+                            // Review can see the whole purchase flow without
+                            // waiting seven days (guideline 2.1).
+                            if !EntitlementManager.shared.isPurchased {
+                                Button {
+                                    showPlansSheet = true
+                                } label: {
+                                    Text("See plans")
+                                        .font(.system(size: 14, weight: .bold))
+                                        .foregroundColor(.black)
+                                        .frame(maxWidth: .infinity)
+                                        .frame(height: 44)
+                                        .background(RoundedRectangle(cornerRadius: 12)
+                                            .fill(Color.goldPrimary))
+                                }
+                            }
                             Button {
                                 showRedeemSheet = true
                             } label: {
@@ -141,7 +159,12 @@ struct SettingsView: View {
                                 LabsHomeView()
                             } label: {
                                 HStack {
-                                    SectionLabel(text: "LABS", tracking: 1)
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        SectionLabel(text: "PRIVATE MODE", tracking: 1)
+                                        Text("Run sessions entirely on this iPhone")
+                                            .font(.footnote)
+                                            .foregroundColor(.textMuted)
+                                    }
                                     Spacer()
                                     Image(systemName: "chevron.right")
                                         .font(.system(size: 12))
@@ -157,8 +180,17 @@ struct SettingsView: View {
                 }
             }
             .scrollBounceBehavior(.basedOnSize)
-            .sheet(isPresented: $showRedeemSheet) {
-                RedeemCodeView()
+            // Apple's own redemption sheet — codes are redeemed BY the App
+            // Store, in-app, never by us (guideline 3.1.1).
+            .offerCodeRedemption(isPresented: $showRedeemSheet) { result in
+                if case .success = result {
+                    Task { await EntitlementManager.shared.refreshEntitlements() }
+                }
+            }
+            .sheet(isPresented: $showPlansSheet) {
+                PaywallView()
+                    .background(Color.darkBackground.ignoresSafeArea())
+                    .preferredColorScheme(.dark)
             }
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
