@@ -14,7 +14,7 @@ struct PaywallView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
-                Spacer(minLength: 24)
+                Spacer(minLength: 12)
 
                 KnotGlyph(color: .goldPrimary)
                     .frame(width: 56, height: 56)
@@ -70,17 +70,55 @@ struct PaywallView: View {
             .padding(.horizontal, 24)
         }
         .scrollBounceBehavior(.basedOnSize)
-        .sheet(isPresented: $showRedeemSheet) {
-            RedeemCodeView()
+        // Apple's own redemption sheet — the App Store owns the code, we never
+        // unlock anything ourselves (guideline 3.1.1).
+        .offerCodeRedemption(isPresented: $showRedeemSheet) { result in
+            if case .success = result {
+                Task { await entitlements.refreshEntitlements() }
+            }
+        }
+        // Returning to this screen (or coming back from Settings/App Store)
+        // retries a failed load without the user hunting for the button.
+        .task {
+            if entitlements.products.isEmpty && entitlements.productState != .loading {
+                await entitlements.loadProducts()
+            }
         }
     }
 
+    @ViewBuilder
     private var loadingPlans: some View {
-        VStack(spacing: 8) {
-            Text("Loading plans…")
-                .font(.system(size: 12))
-                .foregroundColor(.textMuted)
-                .padding(.vertical, 24)
+        if entitlements.productState == .failed {
+            VStack(spacing: 12) {
+                Text("Plans couldn't load")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundColor(.textLight)
+                Text("The App Store didn't answer. Check your connection and try again — your access and any past purchase are safe.")
+                    .font(.system(size: 13))
+                    .foregroundColor(.textMuted)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                Button {
+                    Task { await entitlements.loadProducts() }
+                } label: {
+                    Text("Try again")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(.black)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(RoundedRectangle(cornerRadius: 16).fill(Color.goldPrimary))
+                }
+            }
+            .padding(.vertical, 8)
+        } else {
+            VStack(spacing: 10) {
+                ProgressView()
+                    .tint(.goldPrimary)
+                Text("Loading plans…")
+                    .font(.system(size: 12))
+                    .foregroundColor(.textMuted)
+            }
+            .padding(.vertical, 24)
         }
     }
 

@@ -26,6 +26,15 @@ final class EntitlementManager {
     private(set) var hasLifetime = false
     private(set) var products: [Product] = []
 
+    /// The paywall must never dead-end on "Loading plans…". Product loading can
+    /// fail for reasons the user can act on (no network) and reasons they
+    /// can't (App Store outage, products not yet approved), so the state is
+    /// explicit and always recoverable.
+    enum ProductLoadState: Equatable {
+        case idle, loading, loaded, failed
+    }
+    private(set) var productState: ProductLoadState = .idle
+
     private var updatesTask: Task<Void, Never>?
 
     var isPurchased: Bool { hasSubscription || hasLifetime }
@@ -96,10 +105,22 @@ final class EntitlementManager {
     #endif
 
     func loadProducts() async {
+        guard productState != .loading else { return }
+        productState = .loading
         let ids = [Self.monthlyID, Self.annualID, Self.lifetimeID]
-        if let loaded = try? await Product.products(for: ids) {
-            products = ids.compactMap { id in loaded.first { $0.id == id } }
+        // Two quiet retries with backoff: StoreKit commonly fails the first
+        // call right after cold launch or a network handoff.
+        for attempt in 0..<3 {
+            if let loaded = try? await Product.products(for: ids), !loaded.isEmpty {
+                products = ids.compactMap { id in loaded.first { $0.id == id } }
+                productState = .loaded
+                return
+            }
+            if attempt < 2 {
+                try? await Task.sleep(for: .seconds(attempt == 0 ? 1 : 3))
+            }
         }
+        productState = .failed
     }
 
     func purchase(_ product: Product) async throws {
