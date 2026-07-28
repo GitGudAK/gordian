@@ -74,7 +74,12 @@ button-violating questions. Conclusion: prompt contracts are probabilistic at
 3B — runtime validation (FMEngine.obeysButtons + one corrective retry, offline
 fallback on failure) is mandatory, and the quality gap vs frontier models is
 structural. Product positioning: proxy = sharpness tier, on-device = privacy
-tier; only the adapter track can narrow the gap.
+tier. ADAPTER TRACK IS DEAD (2026-07-27): toolkit 26.0.0 is Apple's final
+release, incompatible with OS 27+ — third-party adapters are sunset. The
+on-device tier's quality ceiling is therefore the base model + prompts +
+runtime validators (current state). The 009 dataset (387-dilemma corpus,
+teacher records, judge rubric, eval holdout) remains valuable: candidate
+uses are proxy-side Gemini fine-tuning and a regression/eval harness.
 
 ## What to Avoid
 
