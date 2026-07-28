@@ -29,3 +29,6 @@ build/
 .obsidian/workspace.json
 .obsidian/workspace-mobile.json
 
+
+# Obsidian vault settings
+.obsidian/

@@ -23,6 +23,7 @@ struct LabsHomeView: View {
                     .disabled(!modelReady)
                 Link("How to turn on Apple Intelligence", destination: Self.appleIntelligenceHelp)
                     .font(.footnote)
+                    .tint(.goldPrimary)
             } footer: {
                 Text("Sessions run entirely on your iPhone. Nothing is sent to a server.\n\n\(requirement)")
             }
