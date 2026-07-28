@@ -13,12 +13,10 @@
 import json, os, hashlib
 from pathlib import Path
 
-# ---------- Drive + Kaggle auth ----------
-from google.colab import drive, files  # type: ignore
-drive.mount("/content/drive")
-WORK = Path("/content/drive/MyDrive/Gordian-011")
+# ---------- data location: /content uploads (no Drive, no accounts) ----------
+WORK = Path("/content")
 OUT = WORK / "out"; OUT.mkdir(parents=True, exist_ok=True)
-assert (WORK / "train.jsonl").exists(), "Upload train.jsonl to Drive/Gordian-011/ first"
+assert (WORK / "train.jsonl").exists(), "Upload train.jsonl + eval-dilemmas.jsonl first"
 
 # Weights come from public ungated mirrors — no account, no token, anywhere.
 # (Google's Gemma license still governs use of the weights.) First reachable
@@ -143,7 +141,13 @@ def run(tag: str, candidates):
 for tag, ref in MODELS.items():
     run(tag, ref)
 
-print("\nALL DONE. Download from Drive/Gordian-011/out/: the four eval-*.jsonl files "
-      "and share them back for judging. Merged models stay in Drive for phase 2 "
-      "(.litertlm export: uv tool install litert-torch; litert-torch export_hf "
-      "--model=<merged dir> --output_dir=<out> --externalize_embedder).")
+# Push the eval files to the browser's download folder for judging
+from google.colab import files as colab_files  # type: ignore
+for f in sorted(OUT.glob("eval-*.jsonl")):
+    print("downloading", f.name)
+    colab_files.download(str(f))
+
+print("\nALL DONE. The four eval-*.jsonl files are in your Downloads folder. "
+      "Merged models are in /content/out for phase 2 (.litertlm export: "
+      "uv tool install litert-torch; litert-torch export_hf --model=<merged dir> "
+      "--output_dir=<out> --externalize_embedder).")

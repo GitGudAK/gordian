@@ -3,7 +3,7 @@ spike: 011
 name: gemma-gordian-quality
 type: standard
 validates: "Given Gemma 3 1B LoRA-tuned on the 009 dataset, when evaluated on the sealed holdout vs untuned Gemma and the Gemini teacher, then tuned quality justifies on-device packaging via LiteRT-LM"
-verdict: PENDING
+verdict: INVALIDATED (run)
 related: [005, 009]
 tags: [gemma, lora, litert-lm, on-device]
 ---
@@ -41,4 +41,29 @@ serves both apps' privacy tiers; successor to Apple's sunset adapter path).
   ~700MB on-device if the small one passes). colab_train_gemma.py ready.
 
 ## Results
-PENDING — awaits Colab training run.
+PARKED 2026-07-28 by founder decision after a failed run. Not a verdict on the
+idea — a verdict on the execution.
+
+What happened (v1 run, L4, ~45 min of compute):
+- 270M trained (loss 3.66 -> 0.77) but produced 53/53 DEGENERATE outputs:
+  literally '{"{"{"{"...' repeated to the token limit. Causes, all mine:
+  (a) trained on the whole sequence instead of masking the prompt, so the
+  model was rewarded for reproducing boilerplate — and every target starts
+  with '{"'; (b) LR 2e-4 x 3 epochs is aggressive for a 270M model on a
+  narrow, rigid dataset; (c) no EOS appended, so it never learned to stop.
+  The falling loss measured memorization of structure, not task learning.
+- Stock 270M baseline: coherent JSON 52/53 but mode correct only 12/53,
+  risk 25/53, and it invented keys. Unusable as-is.
+- 1B never trained: the chosen mirror ships multimodal config; transformers
+  demanded an image processor.
+- Eval loop also crashed twice on a transformers API change
+  (apply_chat_template now returns a dict) that was never smoke-tested.
+
+Process lesson (the real finding): a 90-second smoke test — few examples, one
+epoch, one generation, assert parseable output — would have caught every one
+of these before the expensive run. colab_270m_v2.py implements exactly that as
+three abort-early stage gates, plus prompt masking, LR 5e-5 / 2 epochs, EOS,
+and shared prompt-building for train and eval.
+
+Expectation setting for any future attempt: a 270M model can inherit format
+and voice from distillation, not judgment. Gemini stays the quality tier.
