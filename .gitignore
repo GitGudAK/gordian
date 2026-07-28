@@ -29,5 +29,3 @@ build/
 .obsidian/workspace.json
 .obsidian/workspace-mobile.json
 
-# Obsidian-visible alias for .planning (dotfolders are hidden in Obsidian)
-planning
