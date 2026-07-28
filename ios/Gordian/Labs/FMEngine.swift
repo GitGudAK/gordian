@@ -174,30 +174,43 @@ struct FMEngine {
               CRITICAL: every question must be a direct yes/no question about \
               this exact dilemma — never open-ended, never 'how much' phrasing.
               """
+        // Few-shot: a 3B model imitates far better than it follows rules, so
+        // it is SHOWN complete dilemma -> questions pairs (drawn from the
+        // judged corpus) rather than only told the contract. Positive
+        // examples only — a "bad" example in the prompt got reproduced
+        // verbatim in a live session.
         let qSession = LanguageModelSession {
             """
             You write rapid-fire gut-check questions that bypass overthinking \
             for a decision app. \(framing) Build every question FROM the \
             user's exact dilemma — name its people, options, and stakes. \
             Never give advice. Never mention AI.
+
+            \(isBinary ? Self.binaryShots : Self.yesNoShots)
             """
         }
-        // Prompts ask; validators enforce. 3B adherence is probabilistic, so
-        // every question is checked against the button contract, with one
-        // retry that names the rejects. Too few survivors -> throw, and the
-        // caller's existing offline fallback takes the session.
-        var valid = (try await qSession.respond(
-            to: "Dilemma: \(scenario)",
-            generating: FMQuestions.self
-        )).content.questions.filter { Self.obeysButtons($0, isBinary: isBinary) }
 
-        if valid.count < 6 {
-            let retry = try await qSession.respond(
-                to: "Several questions could not be answered by tapping '\(optionA)' or '\(optionB)'. Write 10 new ones. Every single question must be answered by one of those two taps.",
-                generating: FMQuestions.self
-            ).content.questions.filter { Self.obeysButtons($0, isBinary: isBinary) }
-            valid = retry.count > valid.count ? retry : valid
+        // Best-of-N: generation is ~1.5s on device, so ask three times and
+        // keep the best set. Small models are inconsistent rather than
+        // uniformly weak — sampling and scoring converts that inconsistency
+        // into quality for latency we can afford.
+        var best: [String] = []
+        var bestScore = -1
+        for attempt in 0..<3 {
+            let prompt = attempt == 0
+                ? "Dilemma: \(scenario)"
+                : "Dilemma: \(scenario)\nWrite a different set. Every question must be answered by tapping '\(optionA)' or '\(optionB)', and must name something specific from this dilemma."
+            guard let candidate = try? await qSession.respond(
+                to: prompt, generating: FMQuestions.self
+            ).content.questions.filter({ Self.obeysButtons($0, isBinary: isBinary) })
+            else { continue }
+
+            let score = Self.score(candidate, scenario: scenario)
+            if score > bestScore { bestScore = score; best = candidate }
+            // Ten clean, specific questions is as good as this gets; stop early
+            if candidate.count >= 8 && score >= candidate.count * 2 { break }
         }
+        let valid = best
         guard valid.count >= 5 else {
             throw ProxyError.api(code: "fm_contract", message: "on-device questions failed the button contract")
         }
@@ -210,6 +223,66 @@ struct FMEngine {
             risk: nil,
             lockout: nil
         )
+    }
+
+    // MARK: - Few-shot exemplars (from the judged corpus, spike 009)
+
+    static let binaryShots = """
+        Example dilemma: "Should I take the product manager offer at the fintech \
+        startup or stay senior engineer at my current company?"
+        Options: 'Startup PM' or 'Senior Engineer'
+        Questions:
+        Which version of you does five-years-older you thank?
+        Startup dies in a year: which regret stings less?
+        Which one would you sign tonight, no counteroffers allowed?
+        Which Monday morning feels lighter: roadmaps or pull requests?
+        Which loss scares you more: equity upside or seniority?
+
+        Example dilemma: "Should I move in with Maya after eight months or wait \
+        until the lease ends next summer?"
+        Options: 'Move In Now' or 'Wait For Summer'
+        Questions:
+        Gut first: whose kitchen are you in next March?
+        Is waiting for the lease prudence or a hiding place?
+        Which choice would Maya say you actually want?
+        If the lease didn't exist, what's your answer?
+        Whose toothbrush is already where?
+        """
+
+    static let yesNoShots = """
+        Example dilemma: "Should I quit my job without another one lined up?"
+        Questions:
+        Is Sunday night dread now your normal?
+        Would three months of runway survive your spending?
+        Would you take your own job if offered today?
+        Does your body feel lighter saying 'I quit' out loud?
+        Is fear of the gap the only thing keeping you?
+
+        Example dilemma: "Should I move back home to be closer to my aging parents?"
+        Questions:
+        Is this guilt calling, or love calling?
+        Would you regret the missed years at their table?
+        Would monthly visits quiet the same ache?
+        Is your current city home, or just where you live?
+        If Dad's health turned tomorrow, where are you standing?
+        """
+
+    /// Ranks a candidate question set: contract-clean questions are the floor,
+    /// and each one that names a distinctive word from the user's own dilemma
+    /// scores double — specificity is what separates a Gordian question from
+    /// a survey question.
+    static func score(_ questions: [String], scenario: String) -> Int {
+        let stop: Set<String> = ["should", "would", "could", "about", "there", "their", "which",
+                                 "what", "when", "with", "that", "this", "have", "from", "into",
+                                 "your", "yours", "mine", "they", "them", "than", "then", "just",
+                                 "keep", "want", "even", "still", "been", "being", "make"]
+        let salient = Set(scenario.lowercased()
+            .components(separatedBy: CharacterSet.alphanumerics.inverted)
+            .filter { $0.count > 3 && !stop.contains($0) })
+        return questions.reduce(0) { total, q in
+            let words = Set(q.lowercased().components(separatedBy: CharacterSet.alphanumerics.inverted))
+            return total + (words.isDisjoint(with: salient) ? 1 : 2)
+        }
     }
 
     /// Cheap runtime mirror of the dataset judge: can the answer buttons
