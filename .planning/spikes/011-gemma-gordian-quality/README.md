@@ -24,14 +24,21 @@ serves both apps' privacy tiers; successor to Apple's sunset adapter path).
 - build-training-set.mjs — deterministic rebuild from 009 assets
 
 ## Founder prerequisites (phase 1)
-1. Hugging Face account; accept the Gemma license on the google/gemma-3-1b-it
-   model page; create a read token.
-2. Colab (Pro recommended for an A100/L4; 1B QLoRA may squeeze onto free T4).
+1. Drive folder Gordian-011/ with train.jsonl + eval-dilemmas.jsonl (from out/).
+2. Colab (Pro recommended). Kaggle account (Google sign-in) with the Gemma 3
+   license accepted + API token — replaces Hugging Face entirely.
 
 ## Investigation Trail
 - 2026-07-27: Apple adapter path invalidated (platform sunset). Founder chose
   Gemma; LiteRT-LM confirmed as runtime target (fine-tuned-model conversion
   tutorial exists; iOS + Android). Training set built.
+- 2026-07-27: Eval frame set by founder: tuned Gemma vs GEMINI on the sealed
+  holdout (Apple base model out of scope). Gemini reference column banked
+  (out/eval-gemini.jsonl, 32 sessionable rows; gate rows judged vs labels).
+- 2026-07-27: No-HF pipeline per founder: Kaggle weights -> Colab LoRA ->
+  local merge -> litert-torch export_hf on the local dir. Official tutorial
+  fine-tunes Gemma 270M, so BOTH 270m and 1b train in one run (~200MB vs
+  ~700MB on-device if the small one passes). colab_train_gemma.py ready.
 
 ## Results
 PENDING — awaits Colab training run.
