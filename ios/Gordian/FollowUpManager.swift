@@ -93,7 +93,14 @@ final class FollowUpManager: NSObject, UNUserNotificationCenterDelegate {
         center.setNotificationCategories([category])
     }
 
+    /// A single digest identifier: there is never more than ONE pending
+    /// follow-up notification. Heavy use used to schedule one per verdict, and
+    /// they all landed together days later as a pile.
+    private static let digestID = "GORDIAN_FOLLOW_UP_DIGEST"
+
     /// Permission is requested here — at the moment of first value, not at launch.
+    /// Every completed verdict replaces the pending digest: one decision gets
+    /// the personal ask (with action buttons); several get one summary.
     func scheduleFollowUp(decision: String, followUpID: String) {
         guard followUpsEnabled, !decision.isEmpty else { return }
         #if DEBUG
@@ -104,26 +111,54 @@ final class FollowUpManager: NSObject, UNUserNotificationCenterDelegate {
             let center = UNUserNotificationCenter.current()
             let granted = (try? await center.requestAuthorization(options: [.alert, .sound, .badge])) ?? false
             guard granted else { return }
-
-            let content = UNMutableNotificationContent()
-            content.title = "Close the loop"
-            content.body = "You decided: \(decision) Did you act on it?"
-            content.sound = .default
-            content.categoryIdentifier = Self.categoryID
-            content.userInfo = ["followUpID": followUpID]
-
-            var interval: TimeInterval = 3 * 24 * 3600
-            #if DEBUG
-            if ProcessInfo.processInfo.arguments.contains("-fastFollowUp") { interval = 10 }
-            #endif
-
-            let trigger = UNTimeIntervalNotificationTrigger(timeInterval: interval, repeats: false)
-            try? await center.add(UNNotificationRequest(identifier: followUpID, content: content, trigger: trigger))
+            await rebuildDigest(latestDecision: decision, latestFollowUpID: followUpID)
         }
     }
 
+    /// Recomputes the one pending follow-up from the store. Called after a
+    /// verdict (with the fresh decision) and after a log deletion (without).
+    private func rebuildDigest(latestDecision: String? = nil, latestFollowUpID: String? = nil) async {
+        let center = UNUserNotificationCenter.current()
+        center.removePendingNotificationRequests(withIdentifiers: [Self.digestID])
+
+        let pendingCount = pendingFollowUpCount()
+        guard pendingCount > 0 else { return }
+
+        let content = UNMutableNotificationContent()
+        content.sound = .default
+        if pendingCount == 1, let decision = latestDecision, let id = latestFollowUpID {
+            // One open loop: the personal ask, answerable from the notification
+            content.title = "Close the loop"
+            content.body = "You decided: \(decision) Did you act on it?"
+            content.categoryIdentifier = Self.categoryID
+            content.userInfo = ["followUpID": id]
+        } else {
+            // Several open loops: one summary; tapping opens the app, and
+            // Logs handles the per-decision answers
+            content.title = "Close the loops"
+            content.body = "You untied \(pendingCount) knots recently. Did you act on them?"
+        }
+
+        var interval: TimeInterval = 3 * 24 * 3600
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("-fastFollowUp") { interval = 10 }
+        #endif
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: interval, repeats: false)
+        try? await center.add(UNNotificationRequest(identifier: Self.digestID, content: content, trigger: trigger))
+    }
+
+    /// Logs whose follow-up question is still unanswered.
+    private func pendingFollowUpCount() -> Int {
+        guard let container else { return 0 }
+        let descriptor = FetchDescriptor<DecisionLog>(predicate: #Predicate { $0.actedOn == "pending" })
+        return (try? container.mainContext.fetchCount(descriptor)) ?? 0
+    }
+
     func cancelFollowUp(id: String) {
+        // Legacy per-verdict requests used the followUpID as identifier;
+        // remove those too so upgrades from old builds don't leave strays
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [id])
+        Task { await rebuildDigest() }
     }
 
     func cancelAllFollowUps() {
