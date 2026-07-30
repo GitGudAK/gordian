@@ -62,6 +62,19 @@ struct PaywallView: View {
                     }
                     .font(.system(size: 13))
                     .foregroundColor(.textMuted)
+
+                    // Required for auto-renewable subscriptions (guideline
+                    // 3.1.2(c)): functional links to both policies in the
+                    // purchase flow itself
+                    HStack(spacing: 6) {
+                        Link("Privacy Policy",
+                             destination: URL(string: "https://gordian-proxy.gordian-app.workers.dev/privacy")!)
+                        Text("·").foregroundColor(.textMuted)
+                        Link("Terms of Use",
+                             destination: URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!)
+                    }
+                    .font(.system(size: 12))
+                    .tint(.textMuted)
                 }
                 .padding(.top, 4)
 
