@@ -21,33 +21,20 @@ no AI mentions anywhere, no em-dashes, self-reflection positioning.
 
 > Stuck between two choices? Describe it, answer quick gut questions against a sixty-second clock, and see your own lean in plain words. Free for a week.
 
-## Description
+## Description (1.0.1 — bullets section removed per founder; privacy claim aligned with policy; deal restored)
 
 > You already know. Gordian helps you admit it.
 >
 > Describe what you're stuck on. Gordian writes rapid-fire gut questions for your exact dilemma and starts a sixty-second clock. Quick answers leave no time to build justifications, so the pattern that emerges is your own immediate preference, stated back to you in plain words: the decision, the why, and one small next step.
 >
-> WHAT MAKES IT DIFFERENT
-> • Questions written for your exact situation, every session
-> • Either/or dilemmas get buttons labeled with your own options
-> • A straight answer grounded in what you actually said, never mysticism
-> • Tangled, multi-part dilemmas get untied into separate knots you can run one at a time
-> • Three days later, Gordian asks whether you acted on it, answerable from the notification
->
 > PRIVATE BY DESIGN
-> Your dilemmas and history live only on your device. No accounts, no sign-ins, no ads, no tracking. Deleting the app deletes your history.
+> No accounts, no sign-ins, no ads, no tracking. Your history lives only on your device, and deleting the app deletes it. Dilemma text is processed over an encrypted connection to generate your questions, is never linked to you, and is never used to train anything.
 >
 > A CLEAR DEAL
-> Free for 7 days from first launch. Then a simple subscription, or a one-time lifetime unlock if subscriptions aren't your thing.
->
-> Gordian is a self-reflection exercise. It reflects your own answers and is not medical, legal, financial, or professional advice.
+> Free for 7 days from first launch. Then a simple subscription, or a one-time lifetime unlock if subscriptions aren't your thing. Gordian is a self-reflection exercise. It reflects your own answers and is not medical, legal, financial, or professional advice.
 >
 > Privacy Policy: https://gordian-proxy.gordian-app.workers.dev/privacy
 > Terms of Use (EULA): https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
-
-(EULA line is REQUIRED in the description by guideline 3.1.2 when auto-renewable
-subscriptions exist and no custom EULA is configured — App Review rejected
-2026-07-25 without it.)
 
 ## Keywords (100 chars)
 

@@ -17,11 +17,11 @@ struct SettingsView: View {
 
     private var membershipStatus: String {
         let e = EntitlementManager.shared
-        if e.hasLifetime { return "Lifetime access. Thank you for untying the big knot." }
-        if e.hasSubscription { return "Subscription active. Every session is yours." }
+        if e.hasLifetime { return "Lifetime access." }
+        if e.hasSubscription { return "Subscription active." }
         if e.isInTrial {
             let d = e.trialDaysRemaining
-            return "Free week in progress. \(d) \(d == 1 ? "day" : "days") remaining."
+            return "Free week: \(d) \(d == 1 ? "day" : "days") left."
         }
         return "Your free week has ended."
     }
@@ -85,7 +85,7 @@ struct SettingsView: View {
 
                             notifToggle(
                                 "Decision follow-ups",
-                                description: "A few days after a verdict, Gordian asks whether you acted on it. Answer straight from the notification.",
+                                description: "A few days after a verdict: did you act on it?",
                                 isOn: $followUpsEnabled
                             ) { FollowUpManager.shared.followUpsEnabled = $0 }
 
@@ -101,7 +101,7 @@ struct SettingsView: View {
 
                             notifToggle(
                                 "Weekly recap",
-                                description: "Sunday evening: how many knots you untied and acted on. Skipped on quiet weeks.",
+                                description: "Your week in decisions, Sunday evening. Skipped on quiet weeks.",
                                 isOn: $weeklyRecapEnabled
                             ) { FollowUpManager.shared.weeklyRecapEnabled = $0 }
                         }
@@ -143,7 +143,7 @@ struct SettingsView: View {
                         // About / legal
                         VStack(alignment: .leading, spacing: 12) {
                             SectionLabel(text: "ABOUT GORDIAN", tracking: 1)
-                            Text("Gordian is a self-reflection exercise that helps you reach your own decision faster. It does not provide medical, legal, financial, psychological, or professional advice. Its output reflects your own answers and is not a recommendation. For decisions with serious consequences, consult a qualified professional. You are always responsible for your choices.")
+                            Text("Gordian is a self-reflection exercise that helps you reach your own decision faster. It reflects your own answers and is not medical, legal, financial, or professional advice. For serious decisions, consult a qualified professional. Your choices are always your own.")
                                 .font(.footnote)
                                 .foregroundColor(.textMuted)
                                 .fixedSize(horizontal: false, vertical: true)
