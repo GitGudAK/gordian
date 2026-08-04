@@ -22,8 +22,16 @@ final class EntitlementManager {
     static let trialLength: TimeInterval = 7 * 24 * 60 * 60
     private static let firstLaunchKey = "gordian_first_launch"
 
-    private(set) var hasSubscription = false
-    private(set) var hasLifetime = false
+    // Seeded from the last verified StoreKit state so the first frame renders
+    // correctly: entitlements resolve asynchronously (~1s), and starting from
+    // false flashed the paywall at every cold launch for paying users.
+    // StoreKit remains the authority — refreshEntitlements overwrites these
+    // (and the cache) as soon as it completes.
+    private static let cachedSubscriptionKey = "gordian_cached_subscription"
+    private static let cachedLifetimeKey = "gordian_cached_lifetime"
+
+    private(set) var hasSubscription = UserDefaults.standard.bool(forKey: EntitlementManager.cachedSubscriptionKey)
+    private(set) var hasLifetime = UserDefaults.standard.bool(forKey: EntitlementManager.cachedLifetimeKey)
     private(set) var products: [Product] = []
 
     /// The paywall must never dead-end on "Loading plans…". Product loading can
@@ -95,6 +103,8 @@ final class EntitlementManager {
         #endif
         hasSubscription = subscription
         hasLifetime = lifetime
+        UserDefaults.standard.set(subscription, forKey: Self.cachedSubscriptionKey)
+        UserDefaults.standard.set(lifetime, forKey: Self.cachedLifetimeKey)
     }
 
     #if DEBUG
