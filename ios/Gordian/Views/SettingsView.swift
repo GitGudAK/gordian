@@ -85,7 +85,7 @@ struct SettingsView: View {
 
                             notifToggle(
                                 "Decision follow-ups",
-                                description: "A few days after a verdict: did you act on it?",
+                                description: "Three days after your latest verdict: did you act on it? Never more than one waiting.",
                                 isOn: $followUpsEnabled
                             ) { FollowUpManager.shared.followUpsEnabled = $0 }
 
@@ -93,7 +93,7 @@ struct SettingsView: View {
 
                             notifToggle(
                                 "The Daily Knot",
-                                description: "One reflective question every morning at 9:00.",
+                                description: "One question every morning at 9:00.",
                                 isOn: $dailyKnotEnabled
                             ) { FollowUpManager.shared.dailyKnotEnabled = $0 }
 
@@ -101,7 +101,7 @@ struct SettingsView: View {
 
                             notifToggle(
                                 "Weekly recap",
-                                description: "Your week in decisions, Sunday evening. Skipped on quiet weeks.",
+                                description: "Sundays at 6 PM: your week in decisions. Skipped on quiet weeks.",
                                 isOn: $weeklyRecapEnabled
                             ) { FollowUpManager.shared.weeklyRecapEnabled = $0 }
                         }
