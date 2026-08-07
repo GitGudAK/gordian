@@ -1,0 +1,238 @@
+<title>Gordian — Verdict Card & Shared Knots</title>
+<style>
+  /* Committed single-theme: this board lives in Gordian's own dark/gold deco
+     world on purpose — the mockups ARE the app's visual system. */
+  :root{
+    --ink:#0b0a08; --well:#080705; --surface:#16140f; --surface2:#1d1a13;
+    --gold:#d9b44a; --gold-bright:#eccb6a; --gold-dim:rgba(217,180,74,.34);
+    --gold-faint:rgba(217,180,74,.14);
+    --text:#ece8dd; --muted:#9b9384; --red:#c4694f;
+    --frame-r:44px;
+  }
+  html{background:var(--ink)}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+       color:var(--text);background:var(--ink);line-height:1.5;-webkit-font-smoothing:antialiased}
+  .board{max-width:1180px;margin:0 auto;padding:56px 32px 96px}
+
+  /* ---------- deco furniture ---------- */
+  .eyebrow{font-size:11px;font-weight:700;letter-spacing:.32em;color:var(--gold);text-transform:uppercase}
+  h1{font-size:clamp(28px,4vw,40px);font-weight:800;letter-spacing:.06em;margin:10px 0 6px;text-wrap:balance;text-transform:uppercase}
+  .lede{color:var(--muted);max-width:62ch;margin:0}
+  .deco-rule{display:flex;align-items:center;gap:10px;margin:44px 0 28px}
+  .deco-rule .line{flex:1;height:1px;background:var(--gold-dim)}
+  .dia{width:7px;height:7px;background:var(--gold);transform:rotate(45deg)}
+  .dia.small{width:5px;height:5px;opacity:.6}
+  .act{display:flex;align-items:baseline;gap:14px;margin:0 0 6px}
+  .act h2{font-size:20px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;margin:0}
+  .act .no{font-size:12px;color:var(--gold);letter-spacing:.2em;font-weight:700}
+  .note{color:var(--muted);font-size:14px;max-width:70ch;margin:4px 0 30px}
+
+  /* ---------- knot glyph (interlocked diamonds, as in the app mark) ---------- */
+  .knot{position:relative;width:44px;height:30px}
+  .knot i{position:absolute;top:1px;width:26px;height:26px;border:2.5px solid var(--gold);transform:rotate(45deg);border-radius:3px}
+  .knot i:first-child{left:0}.knot i:last-child{right:0}
+  .knot.big{width:66px;height:46px}
+  .knot.big i{width:40px;height:40px;border-width:3.5px}
+
+  /* ---------- layout strips ---------- */
+  .strip{display:flex;gap:28px;flex-wrap:wrap;align-items:flex-start}
+  .exhibit{display:flex;flex-direction:column;gap:14px}
+  .cap{max-width:300px}
+  .cap b{display:block;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-bottom:4px}
+  .cap span{font-size:13px;color:var(--muted)}
+
+  /* ---------- the verdict cards ---------- */
+  .vcard{background:
+      radial-gradient(120% 90% at 50% 0%, #191611 0%, var(--well) 70%);
+      border:1px solid var(--gold-dim);border-radius:18px;
+      display:flex;flex-direction:column;align-items:center;justify-content:space-between;
+      padding:34px 26px 22px;box-shadow:0 30px 60px rgba(0,0,0,.55)}
+  .vcard.story{width:300px;height:534px}
+  .vcard.square{width:340px;height:340px;padding-top:26px}
+  .vframe{border:1px solid var(--gold-faint);outline:1px solid var(--gold-faint);outline-offset:5px;
+      border-radius:10px;flex:1;width:100%;display:flex;flex-direction:column;
+      align-items:center;justify-content:center;gap:18px;padding:18px;box-sizing:border-box}
+  .vdeco{display:flex;align-items:center;gap:8px;width:70%}
+  .vdeco .line{flex:1;height:1px;background:var(--gold-dim)}
+  .decision{font-size:27px;font-weight:800;letter-spacing:.05em;color:var(--gold-bright);
+      text-transform:uppercase;text-align:center;text-wrap:balance;margin:0;line-height:1.25}
+  .square .decision{font-size:22px}
+  .vmeta{font-size:11.5px;color:var(--muted);letter-spacing:.08em;text-align:center}
+  .vbrand{display:flex;align-items:center;gap:8px;margin-top:16px;opacity:.55}
+  .vbrand .knot{transform:scale(.45);transform-origin:right center;width:24px}
+  .vbrand span{font-size:10px;font-weight:700;letter-spacing:.34em;color:var(--gold)}
+
+  /* ---------- phone frames (shared knots flow) ---------- */
+  .phone{width:264px;height:540px;background:var(--well);border:1px solid #2a261d;
+      border-radius:var(--frame-r);padding:20px 16px;box-sizing:border-box;
+      display:flex;flex-direction:column;gap:12px;box-shadow:0 24px 48px rgba(0,0,0,.5);overflow:hidden}
+  .phone .screen-title{font-size:10px;font-weight:700;letter-spacing:.26em;color:var(--muted);
+      text-transform:uppercase;text-align:center;margin-top:6px}
+
+  /* invite */
+  .chat{display:flex;flex-direction:column;gap:10px;margin-top:36px}
+  .bubble{background:#1f2a38;border-radius:18px 18px 18px 4px;padding:10px 13px;font-size:13.5px;max-width:88%}
+  .invite-card{background:var(--surface);border:1px solid var(--gold-dim);border-radius:16px;padding:16px;
+      display:flex;flex-direction:column;gap:9px;align-self:flex-end;max-width:92%}
+  .invite-card .who{font-size:12.5px;color:var(--text);font-weight:600}
+  .invite-card .q{font-size:14.5px;font-weight:700;color:var(--gold-bright);font-style:italic}
+  .invite-card .rules{font-size:11px;color:var(--muted)}
+  .invite-btn{margin-top:4px;background:var(--gold);color:#161308;border-radius:999px;
+      font-size:12.5px;font-weight:700;text-align:center;padding:9px}
+
+  /* session (familiar anchor) */
+  .ring{width:112px;height:112px;border-radius:50%;margin:26px auto 4px;position:relative;
+      background:conic-gradient(var(--gold) 0 68%, #262218 68% 100%);
+      display:flex;align-items:center;justify-content:center}
+  .ring::before{content:"";position:absolute;inset:7px;background:var(--well);border-radius:50%}
+  .ring b{position:relative;font-size:30px;font-weight:800}
+  .ring span{position:absolute;bottom:22px;font-size:8px;letter-spacing:.22em;color:var(--gold)}
+  .sq{background:var(--surface);border-radius:18px;padding:20px 14px;font-size:14.5px;font-weight:600;
+      text-align:center;flex:1;display:flex;align-items:center;justify-content:center;text-wrap:balance}
+  .opts{display:flex;gap:8px}
+  .opt{flex:1;border:1px solid var(--gold-dim);color:var(--gold);border-radius:999px;
+      font-size:12px;font-weight:700;text-align:center;padding:10px 6px}
+
+  /* waiting */
+  .sealed{display:flex;flex-direction:column;align-items:center;gap:16px;margin-top:96px;text-align:center}
+  .sealed .knot{animation:breathe 2.6s ease-in-out infinite}
+  @keyframes breathe{0%,100%{opacity:.45}50%{opacity:1}}
+  @media (prefers-reduced-motion: reduce){.sealed .knot{animation:none}}
+  .sealed h3{font-size:15px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;margin:0}
+  .sealed p{font-size:12.5px;color:var(--muted);margin:0;max-width:20ch}
+
+  /* reveal */
+  .reveal-q{font-size:11.5px;color:var(--muted);font-style:italic;text-align:center;margin-top:4px}
+  .verdict-line{font-size:16.5px;font-weight:800;color:var(--gold-bright);text-align:center;
+      text-transform:uppercase;letter-spacing:.04em;line-height:1.3;text-wrap:balance;margin:2px 0}
+  .agree,.collide{background:var(--surface);border-radius:14px;padding:11px 12px;display:flex;flex-direction:column;gap:7px}
+  .agree h4,.collide h4{margin:0;font-size:9px;font-weight:700;letter-spacing:.2em;color:var(--gold)}
+  .collide h4{color:var(--red)}
+  .row{display:flex;align-items:center;gap:8px;font-size:11.5px}
+  .row .dia{flex:none}
+  .row .dia.red{background:var(--red)}
+  .split-cols{display:flex;gap:6px;font-size:10.5px;color:var(--muted)}
+  .split-cols div{flex:1;background:var(--surface2);border-radius:8px;padding:6px 8px;text-align:center}
+  .split-cols b{display:block;color:var(--text);font-size:11px}
+  .next{font-size:11px;color:var(--muted);text-align:center;margin-top:2px}
+
+  .costs{display:flex;gap:16px;flex-wrap:wrap;margin-top:18px}
+  .cost{border:1px solid #2a261d;border-radius:12px;padding:12px 16px;font-size:12.5px;color:var(--muted)}
+  .cost b{color:var(--text)}
+  footer{margin-top:64px;text-align:center;color:var(--muted);font-size:11px;letter-spacing:.2em;text-transform:uppercase}
+</style>
+
+<div class="board">
+  <div class="eyebrow">Design review · seeds 3 &amp; 4</div>
+  <h1>Decisions become social objects</h1>
+  <p class="lede">Two features, one strategy at different depths. The Verdict Card makes a single decision shareable; Shared Knots makes the deciding itself something two people do together. Mockups below use the shipped design system — nothing here invents new visual language.</p>
+
+  <div class="deco-rule"><div class="line"></div><div class="dia small"></div><div class="dia"></div><div class="dia small"></div><div class="line"></div></div>
+
+  <div class="act"><span class="no">ACT I</span><h2>The Verdict Card</h2></div>
+  <p class="note">The announcement artifact. Decision loud, brand quiet, dilemma absent by default — people announce the cut, not the deliberation. Renders on-device (ImageRenderer), story and square variants. ~1 week, zero server.</p>
+
+  <div class="strip">
+    <div class="exhibit">
+      <div class="vcard story">
+        <div class="knot big"><i></i><i></i></div>
+        <div class="vframe">
+          <div class="vdeco"><div class="line"></div><div class="dia small"></div><div class="line"></div></div>
+          <p class="decision">Move to Denver.</p>
+          <div class="vdeco"><div class="line"></div><div class="dia small"></div><div class="line"></div></div>
+          <div class="vmeta">Decided July 30, 2026<br>in 61 seconds</div>
+        </div>
+        <div class="vbrand"><span>G O R D I A N</span></div>
+      </div>
+      <div class="cap"><b>Story · 9:16</b><span>Double deco frame, one imperative line. The knot mark is the only image — instantly identifiable in a feed without reading as an ad.</span></div>
+    </div>
+
+    <div class="exhibit">
+      <div class="vcard square">
+        <div class="knot"><i></i><i></i></div>
+        <div class="vframe">
+          <p class="decision">Ask for the team lead role.</p>
+          <div class="vmeta">Decided July 30, 2026 · in 58 seconds</div>
+        </div>
+        <div class="vbrand"><span>G O R D I A N</span></div>
+      </div>
+      <div class="cap"><b>Square · 1:1</b><span>Group-chat and grid variant. App Store link travels in the share <em>text</em>, never on the image.</span></div>
+    </div>
+  </div>
+
+  <div class="deco-rule"><div class="line"></div><div class="dia small"></div><div class="dia"></div><div class="dia small"></div><div class="line"></div></div>
+
+  <div class="act"><span class="no">ACT II</span><h2>Shared Knots</h2></div>
+  <p class="note">One dilemma, two guts, same frozen sixty seconds — no peeking, reveal only when both have cut. The invite is the growth loop; the reveal is the product. Ephemeral server state, token links, still no accounts. 3–6 weeks.</p>
+
+  <div class="strip">
+    <div class="exhibit">
+      <div class="phone">
+        <div class="screen-title">1 · The invite</div>
+        <div class="chat">
+          <div class="bubble">ok but do we actually do this?? 😅</div>
+          <div class="invite-card">
+            <div class="who">Ashwin wants to untie a knot with you</div>
+            <div class="q">“Should we move to Denver?”</div>
+            <div class="rules">Sixty seconds each. No peeking. The reveal opens when you've both cut.</div>
+            <div class="invite-btn">Untie it together</div>
+          </div>
+        </div>
+      </div>
+      <div class="cap"><b>Invite</b><span>Arrives where the argument is already happening. Emotional stakes make it the strongest install prompt the app will ever send.</span></div>
+    </div>
+
+    <div class="exhibit">
+      <div class="phone">
+        <div class="screen-title">2 · Both run the same sixty</div>
+        <div class="ring"><b>41</b><span>SECONDS</span></div>
+        <div class="sq">If Denver falls through next year, which of you grieves?</div>
+        <div class="opts"><div class="opt">Stay in Austin</div><div class="opt">Move to Denver</div></div>
+      </div>
+      <div class="cap"><b>Session</b><span>Identical frozen question set for both people — comparison is only honest if the mirror is the same. The screen itself is unchanged v1.</span></div>
+    </div>
+
+    <div class="exhibit">
+      <div class="phone">
+        <div class="screen-title">3 · Sealed</div>
+        <div class="sealed">
+          <div class="knot big"><i></i><i></i></div>
+          <h3>Your answers<br>are sealed</h3>
+          <p>Maya hasn't finished yet. The reveal opens when you've both cut.</p>
+        </div>
+      </div>
+      <div class="cap"><b>Waiting</b><span>No push infrastructure — the humans notify each other in the same chat the invite traveled. The suspense is a feature, not a gap.</span></div>
+    </div>
+
+    <div class="exhibit">
+      <div class="phone">
+        <div class="screen-title">4 · The reveal</div>
+        <div class="reveal-q">“Should we move to Denver?”</div>
+        <p class="verdict-line">You both leaned Denver.<br>You split on when.</p>
+        <div class="agree">
+          <h4>Where your guts agree</h4>
+          <div class="row"><div class="dia small"></div>Both chose Denver under a dead clock</div>
+          <div class="row"><div class="dia small"></div>Neither would grieve leaving Austin</div>
+        </div>
+        <div class="collide">
+          <h4>Where they collide</h4>
+          <div class="row"><div class="dia small red"></div>“Start over next month?”</div>
+          <div class="split-cols">
+            <div><b>Ashwin</b>Move now</div>
+            <div><b>Maya</b>After the wedding</div>
+          </div>
+        </div>
+        <div class="next">Next step: pick the month together, tonight.</div>
+      </div>
+      <div class="cap"><b>Reveal</b><span>A mirror for two, never a judge. Agreement first, the collision named precisely, one joint next step. This screen is the whole feature.</span></div>
+    </div>
+  </div>
+
+  <div class="costs">
+    <div class="cost"><b>Card:</b> ~1 week · on-device render · zero review risk</div>
+    <div class="cost"><b>Knots:</b> 3–6 weeks · new proxy ops + TTL storage + universal links</div>
+    <div class="cost"><b>Sequence:</b> Card ships first — its share data de-risks the Knots bet</div>
+  </div>
+
+  <footer>Gordian · milestone-two candidates · not committed</footer>
+</div>
